@@ -280,7 +280,10 @@ Todos los errores siguen el formato estÃ¡ndar del sistema PATRICI.A:
 
 *PATRICI.A Â· Equipo 5 Campus Â· Escuela Colombiana de IngenierÃ­a Julio Garavito Â· DOSW 2026*
 
- 
- # #   E q u i p o  
- M ó d u l o   d e s a r r o l l a d o   p o r   e l   E q u i p o   5      C a m p u s ,   E s c u e l a   C o l o m b i a n a   d e   I n g e n i e r í a   J u l i o   G a r a v i t o .  
+
+ 
+ # #   E q u i p o 
+ 
+ M ó d u l o   d e s a r r o l l a d o   p o r   e l   E q u i p o   5      C a m p u s ,   E s c u e l a   C o l o m b i a n a   d e   I n g e n i e r í a   J u l i o   G a r a v i t o . 
+ 
  
