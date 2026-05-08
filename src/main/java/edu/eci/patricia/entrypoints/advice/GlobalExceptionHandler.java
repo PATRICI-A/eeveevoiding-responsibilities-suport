@@ -7,48 +7,53 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /** 404 — Recurso de bienestar no encontrado por ID. */
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    public ResponseEntity<Map<String, Object>> handleResourceNotFound(
+            ResourceNotFoundException ex, WebRequest request) {
+        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    /** 422 — Se intentó obtener mailto de un recurso que no es MENTAL_HEALTH. */
     @ExceptionHandler(InvalidCategoryForMailtoException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidCategoryForMailto(InvalidCategoryForMailtoException ex) {
-        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    public ResponseEntity<Map<String, Object>> handleInvalidCategoryForMailto(
+            InvalidCategoryForMailtoException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
-    /** 400 — Validación de campos (@Valid). */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, Object>> handleValidation(
+            MethodArgumentNotValidException ex, WebRequest request) {
         String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .map(e -> e.getField() + ": " + e.getDefaultMessage())
                 .findFirst()
                 .orElse("Error de validación");
-        return buildResponse(HttpStatus.BAD_REQUEST, message);
+        return build(HttpStatus.BAD_REQUEST, message, request);
     }
 
-    /** 500 — Error inesperado del servidor. */
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGeneric(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Map<String, Object>> handleEnumMismatch(
+            MethodArgumentTypeMismatchException ex, WebRequest request) {
+        return build(HttpStatus.BAD_REQUEST,
+                "Valor inválido para '" + ex.getName() + "': " + ex.getValue() +
+                        ". Valores permitidos: MENTAL_HEALTH, SPORTS, CULTURE, ACADEMIC_SUPPORT", request);
     }
 
-    private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
-        Map<String, Object> body = new HashMap<>();
+    private ResponseEntity<Map<String, Object>> build(HttpStatus status, String message, WebRequest request) {
+        Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("status", status.value());
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
+        body.put("path", request.getDescription(false).replace("uri=", ""));
         return ResponseEntity.status(status).body(body);
     }
 }
