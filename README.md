@@ -282,37 +282,12 @@ Headers: X-User-Name: Laura González
 
 ## 7. 📊 Diagrama
 
-/////////////FALTA EL DIAGRAMA /////////////////////////////
 ### Diagrama de componentes - Vista General
 ```
-┌─────────────────── Infrastructure Layer ──────────────────────┐
-│  SecurityConfig      OpenApiConfig      DataLoader            │
-└───────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────── Entrypoints Layer ─────────────────────────┐
-│  WellnessController          GlobalExceptionHandler           │
-└───────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────── Application Layer ─────────────────────────┐
-│  GetWellnessResourcesUseCaseImpl                              │
-│  GetAppointmentMailtoUseCaseImpl                              │
-│  WellnessMapper                                               │
-└───────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────── Domain Layer ──────────────────────────────┐
-│  WellnessResource (model)    AppointmentMailto (model)        │
-│  WellnessCategory (enum)     Ports: in / out                  │
-│  ResourceNotFoundException   InvalidCategoryForMailtoException│
-└───────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────── Persistence Layer ─────────────────────────┐
-│  WellnessResourceEntity      JpaWellnessResourceRepository    │
-│  WellnessResourcePersistenceMapper                            │
-│  WellnessResourceRepositoryAdapter → PostgreSQL               │
-└───────────────────────────────────────────────────────────────┘
+///////////////////////
 ```
 ### Diagrama de Componentes - Vista Especifica
-///////////////////
+![Diagrama de Componentes](docs/uml/DiagramaComponentesBienestar.png)
 
 **Arquitectura Hexagonal:**
 
@@ -326,11 +301,11 @@ Headers: X-User-Name: Laura González
 
 ### Diagrama de base de datos
 
-//////////////////////////////////////////
+![Diagrama Base de Datos](docs/uml/DiagramaBasedeDatosBienestar.png)
 
 ### Diagrama de Clases del Dominio
 
-//////////////////////////////////////////
+![Diagrama de Dominio](docs/uml/DiagramaDominioBienestar.png)
 
 ### Diagrama de Despliegue
 
@@ -435,7 +410,8 @@ target/site/jacoco/index.html
 1. Consola muestra pruebas ejecutadas exitosamente
    ///////////////////////////////
 2. Reporte JaCoCo con cobertura de código
-   ///////////////////////////////
+   
+  ![Jacoco](docs/images/Jacoco.jpg)
 
 
 ---
