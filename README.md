@@ -2,8 +2,6 @@
 
 # 🌿 DOSW — Microservicio de Bienestar y Soporte
 
-### *"Tu bienestar importa — encuentra el apoyo que necesitas, cuando lo necesitas"*
-
 ---
 
 ### 🛠️ Stack Tecnológico
