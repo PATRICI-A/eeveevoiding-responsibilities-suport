@@ -1,8 +1,8 @@
 package edu.eci.patricia.domain.ports.in;
 
 import edu.eci.patricia.domain.model.WellnessResource;
-import java.util.UUID;
+import edu.eci.patricia.domain.valueobjects.ResourceId;
 
 public interface UpdateWellnessResourcePort {
-    WellnessResource update(UUID id, WellnessResource resource);
+    WellnessResource update(ResourceId id, WellnessResource resource);
 }
