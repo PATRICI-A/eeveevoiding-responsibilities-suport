@@ -54,7 +54,7 @@ http://localhost:8080/swagger-ui/index.html
 Cuando estes trabajando localmente, es más cómodo **solo levantar la base de datos con Docker** y correr la app desde IntelliJ:
 
 ```bash
-# Solo levanta PostgreSQL
+# Solo levanta PostgreSQL, a
 docker compose up db
 ```
 
