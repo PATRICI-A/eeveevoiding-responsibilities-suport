@@ -1,19 +1,10 @@
 package edu.eci.patricia;
 
-import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
+/**
+ * @deprecated Moved to {@link edu.eci.patricia.config.OpenApiConfig}.
+ * This file is kept to preserve git history. The actual configuration is in the config package.
+ */
+@Deprecated(since = "1.0.0", forRemoval = true)
 public class OpenApiConfig {
-
-    @Bean
-    public OpenAPI customOpenAPI() {
-        return new OpenAPI()
-                .info(new Info()
-                        .title("Suport Service API")
-                        .version("1.0")
-                        .description("Wellness and Suport Microservice"));
-    }
+    // Configuration has been moved to edu.eci.patricia.config.OpenApiConfig
 }
