@@ -1,10 +1,28 @@
 package edu.eci.patricia;
 
-/**
- * @deprecated Moved to {@link edu.eci.patricia.config.SecurityConfig}.
- * This file is kept to preserve git history. The actual configuration is in the config package.
- */
-@Deprecated(since = "1.0.0", forRemoval = true)
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableWebSecurity
 public class SecurityConfig {
-    // Configuration has been moved to edu.eci.patricia.config.SecurityConfig
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**",
+                                "/v3/api-docs"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                );
+        return http.build();
+    }
 }
