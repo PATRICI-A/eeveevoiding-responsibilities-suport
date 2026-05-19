@@ -67,7 +67,13 @@ jobs:
           az containerapp update \
             --name patricia-suport-service-qa \
             --resource-group ${{ env.RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:qa-latest
+            --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:qa-latest \
+            --set-env-vars \
+              SPRING_PROFILES_ACTIVE=qa \
+              SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
+              SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
+              SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
+              JWT_SECRET=${{ secrets.JWT_SECRET }}
 
       - name: Health check QA
         run: |
