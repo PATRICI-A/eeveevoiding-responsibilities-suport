@@ -8,7 +8,7 @@ on:
 env:
   JAVA_VERSION: '21'
   REGISTRY: ghcr.io
-  IMAGE_NAME: patrici-a/charizard-compiled-hangout-service
+  IMAGE_NAME: patrici-a/eeveevoiding-responsibilities-suport
   RESOURCE_GROUP: rg-patricia-prod
 
 jobs:
@@ -65,7 +65,7 @@ jobs:
       - name: Deploy to QA Container App
         run: |
           az containerapp update \
-            --name patricia-hangout-service-qa \
+            --name patricia-suport-service-qa \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:qa-latest
 
@@ -73,7 +73,7 @@ jobs:
         run: |
           sleep 30
           QA_URL=$(az containerapp show \
-            --name patricia-hangout-service-qa \
+            --name patricia-suport-service-qa \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
           echo "QA URL: https://$QA_URL"

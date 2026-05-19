@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: patrici-a/charizard-compiled-hangout-service
+  IMAGE_NAME: patrici-a/eeveevoiding-responsibilities-suport
   RESOURCE_GROUP: rg-patricia-prod
 
 jobs:
@@ -28,6 +28,6 @@ jobs:
       - name: Deploy to Prod Container App
         run: |
           az containerapp update \
-            --name patricia-hangout-service-prod \
+            --name patricia-suport-service-prod \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:qa-latest

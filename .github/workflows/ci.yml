@@ -1,4 +1,4 @@
-name: CI – Hangout Service
+name: CI – Suport Service
 
 on:
   pull_request:
@@ -26,7 +26,7 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_DB: hangoutdb
+          POSTGRES_DB: db_suport
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
@@ -51,7 +51,8 @@ jobs:
       - name: Compilar y ejecutar tests
         run: mvn clean verify
         env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/hangoutdb
+          SPRING_PROFILES_ACTIVE: local
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/db_suport
           SPRING_DATASOURCE_USERNAME: postgres
           SPRING_DATASOURCE_PASSWORD: postgres
           JWT_SECRET: ${{ secrets.JWT_SECRET_TEST }}
@@ -60,7 +61,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hangout-service-jar
+          name: suport-service-jar
           path: target/*.jar
           retention-days: 14
 
