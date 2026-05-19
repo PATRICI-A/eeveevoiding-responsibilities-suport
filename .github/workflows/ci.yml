@@ -1,63 +1,82 @@
-name: CI - Build & Unit Tests
+name: CI – Suport Service
 
 on:
-  push:
-    branches:
-      - main
-      - develop
   pull_request:
     branches:
-      - main
       - develop
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+  push:
+    branches:
+      - develop
+
+env:
+  JAVA_VERSION: '21'
 
 jobs:
   build-and-test:
-    name: Build and Test
+    name: "CI – Build & Test"
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: db_suport
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - name: Checkout code
+      - name: Checkout codigo
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Configurar JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: temurin
+          cache: maven
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Build and run tests with coverage
+      - name: Compilar y ejecutar tests
         run: mvn clean verify
+        env:
+          SPRING_PROFILES_ACTIVE: local
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/db_suport
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+          JWT_SECRET: ${{ secrets.JWT_SECRET_TEST }}
 
-      - name: Upload test reports
+      - name: Subir JAR como artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: target/surefire-reports/
+          name: suport-service-jar
+          path: target/*.jar
+          retention-days: 14
 
-      - name: Upload JaCoCo coverage report
+      - name: Subir reporte JaCoCo
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-report
+          name: jacoco-report
           path: target/site/jacoco/
+          retention-days: 14
 
-  docker:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: build-and-test
-    if: success()
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build Docker image
-        run: docker build -t campus-events:${{ github.sha }} .
+      - name: Subir resultados Surefire
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/
+          retention-days: 14
