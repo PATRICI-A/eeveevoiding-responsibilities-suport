@@ -22,9 +22,10 @@ import org.springframework.test.context.TestPropertySource;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.jpa.hibernate.ddl-auto=create-drop"
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "jwt.secret=test-secret-for-ci-only-at-least-32-chars"
 })
-class EeveevoidingResponsibilitiesSuportApplicationTests {
+class   EeveevoidingResponsibilitiesSuportApplicationTests {
 
     @Test
     void contextLoads() {
