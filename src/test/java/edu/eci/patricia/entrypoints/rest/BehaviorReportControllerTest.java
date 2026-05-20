@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,7 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration tests for {@link BehaviorReportController} with full Spring Security context.
- * Uses real JWT tokens so the JwtAuthFilter can authenticate requests correctly.
+ * Uses real JWT tokens so JwtAuthFilter authenticates requests correctly.
  * Service layer is mocked to focus on controller logic.
  */
 @SpringBootTest
@@ -87,24 +88,23 @@ class BehaviorReportControllerTest {
         sampleReport = BehaviorReport.builder()
                 .id(reportId)
                 .reporterId(userId)
-                .description("A professor made discriminatory remarks")
-                .location("Main Auditorium")
-                .reportType(ReportType.DISCRIMINATION)
+                .description("A professor made offensive remarks during class")
+                .reportType(ReportType.HARASSMENT)
                 .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0042")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
         sampleRequest = BehaviorReportRequest.builder()
-                .description("A professor made discriminatory remarks")
-                .location("Main Auditorium")
-                .reportType(ReportType.DISCRIMINATION)
+                .description("A professor made offensive remarks during class")
+                .reportType(ReportType.HARASSMENT)
                 .build();
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports returns 201 when valid")
-    void submitReport_valid_returns201() throws Exception {
+    @DisplayName("POST /api/v1/wellness/reports returns 201 with caseNumber when valid")
+    void submitReport_valid_returns201WithCaseNumber() throws Exception {
         when(submitBehaviorReportUseCase.submitReport(any(BehaviorReport.class))).thenReturn(sampleReport);
 
         mockMvc.perform(post("/api/v1/wellness/reports")
@@ -112,8 +112,73 @@ class BehaviorReportControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.reportType").value("DISCRIMINATION"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.reportType").value("HARASSMENT"))
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.caseNumber").value("RPT-20260519-0042"))
+                .andExpect(jsonPath("$.message").value("Tu reporte ha sido recibido. Número de caso: RPT-20260519-0042"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/wellness/reports with INAPPROPRIATE_BEHAVIOR type returns 201")
+    void submitReport_inappropriateBehavior_returns201() throws Exception {
+        BehaviorReport inappropriateReport = BehaviorReport.builder()
+                .id(UUID.randomUUID())
+                .reporterId(userId)
+                .description("Inappropriate behavior observed in hallway")
+                .reportType(ReportType.INAPPROPRIATE_BEHAVIOR)
+                .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0099")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        BehaviorReportRequest request = BehaviorReportRequest.builder()
+                .description("Inappropriate behavior observed in hallway")
+                .reportType(ReportType.INAPPROPRIATE_BEHAVIOR)
+                .build();
+
+        when(submitBehaviorReportUseCase.submitReport(any(BehaviorReport.class))).thenReturn(inappropriateReport);
+
+        mockMvc.perform(post("/api/v1/wellness/reports")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.reportType").value("INAPPROPRIATE_BEHAVIOR"))
+                .andExpect(jsonPath("$.caseNumber").value("RPT-20260519-0099"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/wellness/reports with referenceId returns 201")
+    void submitReport_withReferenceId_returns201() throws Exception {
+        String refId = UUID.randomUUID().toString();
+        BehaviorReportRequest requestWithRef = BehaviorReportRequest.builder()
+                .description("Offensive content posted in event chat")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
+                .referenceId(refId)
+                .build();
+
+        BehaviorReport reportWithRef = BehaviorReport.builder()
+                .id(UUID.randomUUID())
+                .reporterId(userId)
+                .description("Offensive content posted in event chat")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
+                .referenceId(refId)
+                .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0111")
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        when(submitBehaviorReportUseCase.submitReport(any(BehaviorReport.class))).thenReturn(reportWithRef);
+
+        mockMvc.perform(post("/api/v1/wellness/reports")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestWithRef)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.reportType").value("OFFENSIVE_CONTENT"))
+                .andExpect(jsonPath("$.referenceId").value(refId));
     }
 
     @Test
@@ -121,6 +186,20 @@ class BehaviorReportControllerTest {
     void submitReport_missingDescription_returns400() throws Exception {
         BehaviorReportRequest invalid = BehaviorReportRequest.builder()
                 .reportType(ReportType.HARASSMENT)
+                .build();
+
+        mockMvc.perform(post("/api/v1/wellness/reports")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalid)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/wellness/reports returns 400 when reportType missing")
+    void submitReport_missingReportType_returns400() throws Exception {
+        BehaviorReportRequest invalid = BehaviorReportRequest.builder()
+                .description("Some description")
                 .build();
 
         mockMvc.perform(post("/api/v1/wellness/reports")
@@ -178,7 +257,7 @@ class BehaviorReportControllerTest {
         mockMvc.perform(get("/api/v1/wellness/reports/my-reports")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].reportType").value("DISCRIMINATION"));
+                .andExpect(jsonPath("$[0].reportType").value("HARASSMENT"));
     }
 
     @Test

@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Response DTO representing a wellness resource returned to the client.
+ * Response DTO representing a wellness resource returned to the client (RF23).
+ * For MENTAL_HEALTH resources, appointmentEmail and psychologistName are populated.
  */
 @Data
 @Builder
@@ -35,7 +36,7 @@ public class WellnessResourceResponse {
     @Schema(description = "Physical or virtual location", example = "Building A, Room 201")
     private String location;
 
-    @Schema(description = "Contact information", example = "counseling@university.edu")
+    @Schema(description = "Contact information", example = "counseling@eci.edu.co")
     private String contactInfo;
 
     @Schema(description = "Operating schedule", example = "Mon-Fri 08:00-17:00")
@@ -43,6 +44,12 @@ public class WellnessResourceResponse {
 
     @Schema(description = "Whether the resource is currently available", example = "true")
     private boolean available;
+
+    @Schema(description = "Psychologist email — only for MENTAL_HEALTH resources", example = "psicologia@eci.edu.co")
+    private String appointmentEmail;
+
+    @Schema(description = "Psychologist name — only for MENTAL_HEALTH resources", example = "Dra. María García")
+    private String psychologistName;
 
     @Schema(description = "Timestamp when the resource was created")
     private LocalDateTime createdAt;

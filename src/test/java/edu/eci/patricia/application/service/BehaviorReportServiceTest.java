@@ -47,22 +47,21 @@ class BehaviorReportServiceTest {
                 .id(reportId)
                 .reporterId(reporterId)
                 .description("Inappropriate comments were made during the class")
-                .location("Room 301, Block C")
                 .reportType(ReportType.HARASSMENT)
                 .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-1234")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
     }
 
     @Test
-    @DisplayName("submitReport should set status to PENDING and persist the report")
-    void submitReport_validReport_setsPendingStatusAndSaves() {
+    @DisplayName("submitReport sets status PENDING, generates caseNumber, and persists the report")
+    void submitReport_validReport_setsPendingStatusAndGeneratesCaseNumber() {
         BehaviorReport input = BehaviorReport.builder()
                 .reporterId(reporterId)
-                .description("Bullying observed in hallway")
-                .location("Hallway 2nd floor")
-                .reportType(ReportType.BULLYING)
+                .description("Offensive content posted on platform")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
                 .build();
 
         when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> {
@@ -74,13 +73,32 @@ class BehaviorReportServiceTest {
         BehaviorReport result = service.submitReport(input);
 
         assertThat(result.getStatus()).isEqualTo(ReportStatus.PENDING);
+        assertThat(result.getCaseNumber()).isNotNull();
+        assertThat(result.getCaseNumber()).matches("RPT-\\d{8}-\\d{4}");
         assertThat(result.getCreatedAt()).isNotNull();
         assertThat(result.getUpdatedAt()).isNotNull();
         verify(reportRepositoryPort).save(input);
     }
 
     @Test
-    @DisplayName("getReportById should return the report when it exists")
+    @DisplayName("submitReport generates caseNumber in format RPT-YYYYMMDD-XXXX")
+    void submitReport_caseNumberFormat() {
+        BehaviorReport input = BehaviorReport.builder()
+                .reporterId(reporterId)
+                .description("Inappropriate behavior in the library")
+                .reportType(ReportType.INAPPROPRIATE_BEHAVIOR)
+                .build();
+
+        when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BehaviorReport result = service.submitReport(input);
+
+        assertThat(result.getCaseNumber()).startsWith("RPT-");
+        assertThat(result.getCaseNumber()).hasSize(17); // RPT-YYYYMMDD-XXXX = 17 chars
+    }
+
+    @Test
+    @DisplayName("getReportById returns the report when it exists")
     void getReportById_existingId_returnsReport() {
         when(reportRepositoryPort.findById(reportId)).thenReturn(Optional.of(sampleReport));
 
@@ -92,7 +110,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("getReportById should return empty Optional when report does not exist")
+    @DisplayName("getReportById returns empty Optional when report does not exist")
     void getReportById_nonExistentId_returnsEmpty() {
         UUID nonExistentId = UUID.randomUUID();
         when(reportRepositoryPort.findById(nonExistentId)).thenReturn(Optional.empty());
@@ -103,7 +121,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("getReportsByReporter should return all reports for the given reporter")
+    @DisplayName("getReportsByReporter returns all reports for the given reporter")
     void getReportsByReporter_validReporterId_returnsReports() {
         when(reportRepositoryPort.findByReporterId(reporterId)).thenReturn(List.of(sampleReport));
 
@@ -114,7 +132,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("getReportsByReporter should return empty list when reporter has no reports")
+    @DisplayName("getReportsByReporter returns empty list when reporter has no reports")
     void getReportsByReporter_noReports_returnsEmptyList() {
         UUID anotherReporterId = UUID.randomUUID();
         when(reportRepositoryPort.findByReporterId(anotherReporterId)).thenReturn(List.of());
@@ -125,16 +143,15 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("submitReport should set both createdAt and updatedAt timestamps")
+    @DisplayName("submitReport sets both createdAt and updatedAt timestamps")
     void submitReport_setsTimestamps() {
         BehaviorReport input = BehaviorReport.builder()
                 .reporterId(reporterId)
-                .description("Discrimination in cafeteria")
-                .reportType(ReportType.DISCRIMINATION)
+                .description("Offensive content shared in group chat")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
                 .build();
 
         LocalDateTime before = LocalDateTime.now().minusSeconds(1);
-
         when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> inv.getArgument(0));
 
         BehaviorReport result = service.submitReport(input);

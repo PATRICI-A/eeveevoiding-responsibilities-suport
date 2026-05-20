@@ -37,9 +37,9 @@ class WellnessSurveyServiceTest {
     private WellnessSurveyService service;
 
     private WellnessResource mentalHealthResource;
-    private WellnessResource physicalHealthResource;
-    private WellnessResource socialResource;
-    private WellnessResource academicResource;
+    private WellnessResource sportsResource;
+    private WellnessResource cultureResource;
+    private WellnessResource academicSupportResource;
 
     @BeforeEach
     void setUp() {
@@ -50,30 +50,30 @@ class WellnessSurveyServiceTest {
                 .available(true)
                 .build();
 
-        physicalHealthResource = WellnessResource.builder()
+        sportsResource = WellnessResource.builder()
                 .id(UUID.randomUUID())
                 .name("Sports Center")
-                .category(WellnessCategory.PHYSICAL_HEALTH)
+                .category(WellnessCategory.SPORTS)
                 .available(true)
                 .build();
 
-        socialResource = WellnessResource.builder()
+        cultureResource = WellnessResource.builder()
                 .id(UUID.randomUUID())
-                .name("Student Community Hub")
-                .category(WellnessCategory.SOCIAL)
+                .name("Cultural Hub")
+                .category(WellnessCategory.CULTURE)
                 .available(true)
                 .build();
 
-        academicResource = WellnessResource.builder()
+        academicSupportResource = WellnessResource.builder()
                 .id(UUID.randomUUID())
                 .name("Academic Tutoring")
-                .category(WellnessCategory.ACADEMIC)
+                .category(WellnessCategory.ACADEMIC_SUPPORT)
                 .available(true)
                 .build();
     }
 
     @Test
-    @DisplayName("submitSurvey with all scores of 5 should produce EXCELLENT wellbeing level")
+    @DisplayName("submitSurvey with all scores of 5 produces EXCELLENT wellbeing level")
     void submitSurvey_allHighScores_producesExcellentLevel() {
         SurveyResponse input = SurveyResponse.builder()
                 .userId(UUID.randomUUID())
@@ -97,7 +97,7 @@ class WellnessSurveyServiceTest {
     }
 
     @Test
-    @DisplayName("submitSurvey with all scores of 1 should produce CRITICAL wellbeing level")
+    @DisplayName("submitSurvey with all scores of 1 produces CRITICAL wellbeing level")
     void submitSurvey_allLowScores_producesCriticalLevel() {
         SurveyResponse input = SurveyResponse.builder()
                 .userId(UUID.randomUUID())
@@ -121,7 +121,7 @@ class WellnessSurveyServiceTest {
     }
 
     @Test
-    @DisplayName("submitSurvey with mixed scores should compute correct average and MODERATE level")
+    @DisplayName("submitSurvey with mixed scores computes correct average and MODERATE level")
     void submitSurvey_mixedScores_computesCorrectAverage() {
         SurveyResponse input = SurveyResponse.builder()
                 .userId(UUID.randomUUID())
@@ -145,7 +145,7 @@ class WellnessSurveyServiceTest {
     }
 
     @Test
-    @DisplayName("getRecommendations with low mood score should return mental health resources")
+    @DisplayName("getRecommendations with low mood score returns MENTAL_HEALTH resources")
     void getRecommendations_lowMoodScore_returnsMentalHealthResources() {
         when(resourceRepositoryPort.findByCategory(WellnessCategory.MENTAL_HEALTH))
                 .thenReturn(List.of(mentalHealthResource));
@@ -157,22 +157,37 @@ class WellnessSurveyServiceTest {
     }
 
     @Test
-    @DisplayName("getRecommendations with low social and academic scores should return relevant resources")
+    @DisplayName("getRecommendations with low stress score returns MENTAL_HEALTH and SPORTS resources")
+    void getRecommendations_lowStressScore_returnsMentalHealthAndSports() {
+        when(resourceRepositoryPort.findByCategory(WellnessCategory.MENTAL_HEALTH))
+                .thenReturn(List.of(mentalHealthResource));
+        when(resourceRepositoryPort.findByCategory(WellnessCategory.SPORTS))
+                .thenReturn(List.of(sportsResource));
+
+        List<WellnessResource> recommendations = service.getRecommendations(4, 2, 4, 4, 4);
+
+        assertThat(recommendations).hasSize(2);
+        assertThat(recommendations).extracting(WellnessResource::getCategory)
+                .containsExactlyInAnyOrder(WellnessCategory.MENTAL_HEALTH, WellnessCategory.SPORTS);
+    }
+
+    @Test
+    @DisplayName("getRecommendations with low social and academic scores returns CULTURE and ACADEMIC_SUPPORT")
     void getRecommendations_lowSocialAndAcademic_returnsMultipleCategories() {
-        when(resourceRepositoryPort.findByCategory(WellnessCategory.SOCIAL))
-                .thenReturn(List.of(socialResource));
-        when(resourceRepositoryPort.findByCategory(WellnessCategory.ACADEMIC))
-                .thenReturn(List.of(academicResource));
+        when(resourceRepositoryPort.findByCategory(WellnessCategory.CULTURE))
+                .thenReturn(List.of(cultureResource));
+        when(resourceRepositoryPort.findByCategory(WellnessCategory.ACADEMIC_SUPPORT))
+                .thenReturn(List.of(academicSupportResource));
 
         List<WellnessResource> recommendations = service.getRecommendations(4, 4, 4, 2, 2);
 
         assertThat(recommendations).hasSize(2);
         assertThat(recommendations).extracting(WellnessResource::getCategory)
-                .containsExactlyInAnyOrder(WellnessCategory.SOCIAL, WellnessCategory.ACADEMIC);
+                .containsExactlyInAnyOrder(WellnessCategory.CULTURE, WellnessCategory.ACADEMIC_SUPPORT);
     }
 
     @Test
-    @DisplayName("getRecommendations with all high scores should return empty list")
+    @DisplayName("getRecommendations with all high scores returns empty list")
     void getRecommendations_allHighScores_returnsEmptyList() {
         List<WellnessResource> recommendations = service.getRecommendations(5, 5, 5, 5, 5);
 
@@ -180,7 +195,7 @@ class WellnessSurveyServiceTest {
     }
 
     @Test
-    @DisplayName("getSurveyHistory should delegate to repository and return results")
+    @DisplayName("getSurveyHistory delegates to repository and returns results")
     void getSurveyHistory_delegatesToRepository() {
         UUID userId = UUID.randomUUID();
         SurveyResponse savedSurvey = SurveyResponse.builder()

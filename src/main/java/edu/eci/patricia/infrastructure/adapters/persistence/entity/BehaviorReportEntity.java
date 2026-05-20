@@ -21,8 +21,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * JPA entity mapping to the {@code behavior_reports} table.
- * Records an inappropriate behavior report submitted by a student.
+ * JPA entity mapping to the {@code behavior_reports} table (RF24).
+ * Stores student behavior reports with unique case numbers and anonymous-facing design.
  */
 @Entity
 @Table(name = "behavior_reports")
@@ -32,39 +32,37 @@ import java.util.UUID;
 @AllArgsConstructor
 public class BehaviorReportEntity {
 
-    /** Primary key generated as a UUID. */
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
-    /** Identifier of the student who submitted the report. */
     @Column(name = "reporter_id", nullable = false)
     private UUID reporterId;
 
-    /** Detailed description of the behavior. */
-    @Column(nullable = false, length = 2000)
-    private String description;
-
-    /** Location where the behavior occurred. */
-    private String location;
-
-    /** Classification of the type of behavior. */
     @Enumerated(EnumType.STRING)
     @Column(name = "report_type", nullable = false)
     private ReportType reportType;
 
-    /** Current processing status of the report. */
+    @Column(nullable = false, length = 1000)
+    private String description;
+
+    /** Optional reference to a related event or user (stored as UUID string). */
+    @Column(name = "reference_id")
+    private String referenceId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ReportStatus status;
 
-    /** Timestamp automatically set when the record is inserted. */
+    /** Unique case number in format RPT-YYYYMMDD-XXXX. */
+    @Column(name = "case_number", unique = true)
+    private String caseNumber;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    /** Timestamp automatically updated on every modification. */
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

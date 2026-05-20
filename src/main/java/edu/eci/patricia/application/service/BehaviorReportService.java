@@ -1,6 +1,5 @@
 package edu.eci.patricia.application.service;
 
-import edu.eci.patricia.domain.exception.ResourceNotFoundException;
 import edu.eci.patricia.domain.model.BehaviorReport;
 import edu.eci.patricia.domain.model.ReportStatus;
 import edu.eci.patricia.domain.ports.in.SubmitBehaviorReportUseCase;
@@ -9,23 +8,27 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 /**
- * Application service implementing the behavior report submission and query use cases.
- * New reports are created with PENDING status and the current timestamp.
+ * Application service implementing the behavior report use cases (RF24).
+ * Generates a unique case number on submission and sets initial PENDING status.
  */
 @Service
 @RequiredArgsConstructor
 public class BehaviorReportService implements SubmitBehaviorReportUseCase {
 
     private final BehaviorReportRepositoryPort reportRepositoryPort;
+    private final Random random = new Random();
 
     /**
      * {@inheritDoc}
-     * Sets the initial status to PENDING and records the submission timestamp.
+     * Sets status to PENDING, generates a case number in format RPT-YYYYMMDD-XXXX,
+     * and records submission timestamp.
      */
     @Override
     public BehaviorReport submitReport(BehaviorReport report) {
@@ -33,25 +36,31 @@ public class BehaviorReportService implements SubmitBehaviorReportUseCase {
         LocalDateTime now = LocalDateTime.now();
         report.setCreatedAt(now);
         report.setUpdatedAt(now);
+        report.setCaseNumber(generateCaseNumber(now));
         return reportRepositoryPort.save(report);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    /** {@inheritDoc} */
     @Override
     public Optional<BehaviorReport> getReportById(UUID id) {
         return reportRepositoryPort.findById(id);
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @throws ResourceNotFoundException if no report exists with the given id
-     */
+    /** {@inheritDoc} */
     @Override
     public List<BehaviorReport> getReportsByReporter(UUID reporterId) {
-        List<BehaviorReport> reports = reportRepositoryPort.findByReporterId(reporterId);
-        return reports;
+        return reportRepositoryPort.findByReporterId(reporterId);
+    }
+
+    /**
+     * Generates a unique case number in format {@code RPT-YYYYMMDD-XXXX}.
+     *
+     * @param now the current timestamp used for the date portion
+     * @return a formatted case number string
+     */
+    private String generateCaseNumber(LocalDateTime now) {
+        String date = now.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String suffix = String.format("%04d", random.nextInt(10000));
+        return "RPT-" + date + "-" + suffix;
     }
 }

@@ -29,30 +29,32 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * REST controller for inappropriate behavior report operations.
- * Students can submit reports and view their own submissions.
+ * REST controller for inappropriate behavior report operations (RF24).
+ * Students can submit anonymous reports and view their own submissions.
+ * Reporter identity is never exposed to the reported party.
  */
 @RestController
 @RequestMapping("/api/v1/wellness/reports")
 @RequiredArgsConstructor
-@Tag(name = "Behavior Reports", description = "Endpoints for submitting and tracking inappropriate behavior reports")
+@Tag(name = "Behavior Reports", description = "Endpoints for submitting and tracking inappropriate behavior reports (RF24)")
 @SecurityRequirement(name = "bearerAuth")
 public class BehaviorReportController {
 
     private final SubmitBehaviorReportUseCase submitBehaviorReportUseCase;
 
     /**
-     * Submits a new inappropriate behavior report for the authenticated student.
+     * Submits a new behavior report. Returns HTTP 201 with a unique case number (RF24).
      *
      * @param request        the report payload
-     * @param authentication the Spring Security authentication holding the student's userId
-     * @return the created report with HTTP 201
+     * @param authentication the Spring Security authentication holding the student's userId (from JWT)
+     * @return the created report with caseNumber and confirmation message
      */
     @PostMapping
     @Operation(summary = "Submit a behavior report",
-               description = "Creates a new report of inappropriate behavior. The reporter ID is taken from the JWT subject.")
+               description = "Creates a new report of inappropriate behavior. Reporter ID is taken from JWT. " +
+                             "Returns a unique case number in format RPT-YYYYMMDD-XXXX.")
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Report submitted successfully"),
+        @ApiResponse(responseCode = "201", description = "Report submitted — case number assigned"),
         @ApiResponse(responseCode = "400", description = "Validation error"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
@@ -64,9 +66,9 @@ public class BehaviorReportController {
 
         BehaviorReport report = BehaviorReport.builder()
                 .reporterId(reporterId)
-                .description(request.getDescription())
-                .location(request.getLocation())
                 .reportType(request.getReportType())
+                .description(request.getDescription())
+                .referenceId(request.getReferenceId())
                 .build();
 
         BehaviorReport created = submitBehaviorReportUseCase.submitReport(report);
@@ -74,7 +76,7 @@ public class BehaviorReportController {
     }
 
     /**
-     * Retrieves a behavior report by its UUID. Only the original reporter can view their own report.
+     * Retrieves a behavior report by UUID. Only the original reporter can view their own report.
      *
      * @param id             the UUID of the report
      * @param authentication the Spring Security authentication
@@ -82,7 +84,7 @@ public class BehaviorReportController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get a behavior report by ID",
-               description = "Returns the report details. Access is restricted to the student who submitted the report.")
+               description = "Returns report details. Access restricted to the student who submitted it.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Report found"),
         @ApiResponse(responseCode = "403", description = "Forbidden — student is not the reporter"),
@@ -136,10 +138,14 @@ public class BehaviorReportController {
     private BehaviorReportResponse toResponse(BehaviorReport report) {
         return BehaviorReportResponse.builder()
                 .id(report.getId())
+                .caseNumber(report.getCaseNumber())
+                .message(report.getCaseNumber() != null
+                        ? "Tu reporte ha sido recibido. Número de caso: " + report.getCaseNumber()
+                        : null)
                 .reporterId(report.getReporterId())
-                .description(report.getDescription())
-                .location(report.getLocation())
                 .reportType(report.getReportType())
+                .description(report.getDescription())
+                .referenceId(report.getReferenceId())
                 .status(report.getStatus())
                 .createdAt(report.getCreatedAt())
                 .updatedAt(report.getUpdatedAt())

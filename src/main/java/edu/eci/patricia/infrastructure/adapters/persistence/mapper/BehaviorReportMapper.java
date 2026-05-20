@@ -11,12 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class BehaviorReportMapper {
 
-    /**
-     * Converts a JPA entity to a domain model.
-     *
-     * @param entity the JPA entity to convert
-     * @return the corresponding domain model, or null if entity is null
-     */
     public BehaviorReport toDomain(BehaviorReportEntity entity) {
         if (entity == null) {
             return null;
@@ -24,21 +18,16 @@ public class BehaviorReportMapper {
         return BehaviorReport.builder()
                 .id(entity.getId())
                 .reporterId(entity.getReporterId())
-                .description(entity.getDescription())
-                .location(entity.getLocation())
                 .reportType(entity.getReportType())
+                .description(entity.getDescription())
+                .referenceId(entity.getReferenceId())
                 .status(entity.getStatus())
+                .caseNumber(entity.getCaseNumber())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
     }
 
-    /**
-     * Converts a domain model to a JPA entity.
-     *
-     * @param domain the domain model to convert
-     * @return the corresponding JPA entity, or null if domain is null
-     */
     public BehaviorReportEntity toEntity(BehaviorReport domain) {
         if (domain == null) {
             return null;
@@ -46,10 +35,11 @@ public class BehaviorReportMapper {
         return BehaviorReportEntity.builder()
                 .id(domain.getId())
                 .reporterId(domain.getReporterId())
-                .description(domain.getDescription())
-                .location(domain.getLocation())
                 .reportType(domain.getReportType())
+                .description(domain.getDescription())
+                .referenceId(domain.getReferenceId())
                 .status(domain.getStatus())
+                .caseNumber(domain.getCaseNumber())
                 .createdAt(domain.getCreatedAt())
                 .updatedAt(domain.getUpdatedAt())
                 .build();

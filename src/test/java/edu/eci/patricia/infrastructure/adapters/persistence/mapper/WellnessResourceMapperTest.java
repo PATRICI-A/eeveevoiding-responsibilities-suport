@@ -25,18 +25,18 @@ class WellnessResourceMapperTest {
     }
 
     @Test
-    @DisplayName("toDomain converts entity to domain model correctly")
+    @DisplayName("toDomain converts entity to domain model correctly (SPORTS resource)")
     void toDomain_validEntity_returnsDomainModel() {
         UUID id = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
 
         WellnessResourceEntity entity = WellnessResourceEntity.builder()
                 .id(id)
-                .name("Fitness Center")
+                .name("Sports Center")
                 .description("Gym and fitness classes")
-                .category(WellnessCategory.PHYSICAL_HEALTH)
+                .category(WellnessCategory.SPORTS)
                 .location("Sports Complex")
-                .contactInfo("fitness@eci.edu.co")
+                .contactInfo("sports@eci.edu.co")
                 .schedule("Mon-Sun 06:00-22:00")
                 .available(true)
                 .createdAt(now)
@@ -46,14 +46,36 @@ class WellnessResourceMapperTest {
 
         assertThat(domain).isNotNull();
         assertThat(domain.getId()).isEqualTo(id);
-        assertThat(domain.getName()).isEqualTo("Fitness Center");
+        assertThat(domain.getName()).isEqualTo("Sports Center");
         assertThat(domain.getDescription()).isEqualTo("Gym and fitness classes");
-        assertThat(domain.getCategory()).isEqualTo(WellnessCategory.PHYSICAL_HEALTH);
+        assertThat(domain.getCategory()).isEqualTo(WellnessCategory.SPORTS);
         assertThat(domain.getLocation()).isEqualTo("Sports Complex");
-        assertThat(domain.getContactInfo()).isEqualTo("fitness@eci.edu.co");
+        assertThat(domain.getContactInfo()).isEqualTo("sports@eci.edu.co");
         assertThat(domain.getSchedule()).isEqualTo("Mon-Sun 06:00-22:00");
         assertThat(domain.isAvailable()).isTrue();
         assertThat(domain.getCreatedAt()).isEqualTo(now);
+    }
+
+    @Test
+    @DisplayName("toDomain maps MENTAL_HEALTH resource with appointmentEmail and psychologistName")
+    void toDomain_mentalHealthEntity_mapsPsychologistFields() {
+        UUID id = UUID.randomUUID();
+
+        WellnessResourceEntity entity = WellnessResourceEntity.builder()
+                .id(id)
+                .name("Counseling Center")
+                .description("Individual therapy")
+                .category(WellnessCategory.MENTAL_HEALTH)
+                .location("Building A")
+                .available(true)
+                .appointmentEmail("psicologia@eci.edu.co")
+                .psychologistName("Dra. María García")
+                .build();
+
+        WellnessResource domain = mapper.toDomain(entity);
+
+        assertThat(domain.getAppointmentEmail()).isEqualTo("psicologia@eci.edu.co");
+        assertThat(domain.getPsychologistName()).isEqualTo("Dra. María García");
     }
 
     @Test
@@ -63,7 +85,7 @@ class WellnessResourceMapperTest {
     }
 
     @Test
-    @DisplayName("toEntity converts domain model to entity correctly")
+    @DisplayName("toEntity converts domain model to entity correctly (ACADEMIC_SUPPORT resource)")
     void toEntity_validDomain_returnsEntity() {
         UUID id = UUID.randomUUID();
         LocalDateTime now = LocalDateTime.now();
@@ -72,7 +94,7 @@ class WellnessResourceMapperTest {
                 .id(id)
                 .name("Library")
                 .description("Academic support and quiet study space")
-                .category(WellnessCategory.ACADEMIC)
+                .category(WellnessCategory.ACADEMIC_SUPPORT)
                 .location("Main Campus")
                 .contactInfo("library@eci.edu.co")
                 .schedule("Mon-Fri 07:00-21:00")
@@ -86,7 +108,7 @@ class WellnessResourceMapperTest {
         assertThat(entity.getId()).isEqualTo(id);
         assertThat(entity.getName()).isEqualTo("Library");
         assertThat(entity.getDescription()).isEqualTo("Academic support and quiet study space");
-        assertThat(entity.getCategory()).isEqualTo(WellnessCategory.ACADEMIC);
+        assertThat(entity.getCategory()).isEqualTo(WellnessCategory.ACADEMIC_SUPPORT);
         assertThat(entity.getLocation()).isEqualTo("Main Campus");
         assertThat(entity.getContactInfo()).isEqualTo("library@eci.edu.co");
         assertThat(entity.getSchedule()).isEqualTo("Mon-Fri 07:00-21:00");
@@ -101,15 +123,15 @@ class WellnessResourceMapperTest {
     }
 
     @Test
-    @DisplayName("Round-trip entity→domain→entity preserves all fields")
+    @DisplayName("Round-trip entity→domain→entity preserves all fields including new categories")
     void roundTrip_entityToDomainToEntity_preservesFields() {
         UUID id = UUID.randomUUID();
 
         WellnessResourceEntity original = WellnessResourceEntity.builder()
                 .id(id)
-                .name("Social Club")
-                .description("Community and social events")
-                .category(WellnessCategory.SOCIAL)
+                .name("Cultural Center")
+                .description("Arts and cultural events")
+                .category(WellnessCategory.CULTURE)
                 .location("Student Union")
                 .available(true)
                 .build();
@@ -118,6 +140,6 @@ class WellnessResourceMapperTest {
 
         assertThat(roundTripped.getId()).isEqualTo(original.getId());
         assertThat(roundTripped.getName()).isEqualTo(original.getName());
-        assertThat(roundTripped.getCategory()).isEqualTo(original.getCategory());
+        assertThat(roundTripped.getCategory()).isEqualTo(WellnessCategory.CULTURE);
     }
 }

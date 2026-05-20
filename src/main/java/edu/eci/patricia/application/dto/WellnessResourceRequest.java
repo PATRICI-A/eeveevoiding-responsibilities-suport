@@ -10,7 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Request DTO for creating or updating a wellness resource.
+ * Request DTO for creating or updating a wellness resource (RF23).
  */
 @Data
 @Builder
@@ -29,14 +29,16 @@ public class WellnessResourceRequest {
     private String description;
 
     @NotNull(message = "Category is required")
-    @Schema(description = "Wellness category this resource belongs to", example = "MENTAL_HEALTH")
+    @Schema(description = "Wellness category this resource belongs to",
+            example = "MENTAL_HEALTH",
+            allowableValues = {"MENTAL_HEALTH", "SPORTS", "CULTURE", "ACADEMIC_SUPPORT"})
     private WellnessCategory category;
 
     @NotBlank(message = "Location is required")
     @Schema(description = "Physical or virtual location", example = "Building A, Room 201")
     private String location;
 
-    @Schema(description = "Contact email, phone, or website", example = "counseling@university.edu")
+    @Schema(description = "Contact email, phone, or website", example = "counseling@eci.edu.co")
     private String contactInfo;
 
     @Schema(description = "Operating schedule", example = "Mon-Fri 08:00-17:00")
@@ -44,4 +46,12 @@ public class WellnessResourceRequest {
 
     @Schema(description = "Whether the resource is currently available", example = "true")
     private boolean available;
+
+    @Schema(description = "Psychologist email address — only for MENTAL_HEALTH resources",
+            example = "psicologia@eci.edu.co")
+    private String appointmentEmail;
+
+    @Schema(description = "Psychologist name — only for MENTAL_HEALTH resources",
+            example = "Dra. María García")
+    private String psychologistName;
 }

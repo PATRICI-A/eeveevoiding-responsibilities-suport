@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Domain model representing a student-submitted report of inappropriate behavior on campus.
+ * Domain model representing a student-submitted report of inappropriate behavior (RF24).
+ * Reports are anonymous towards the reported party; only admins can see the reporter's identity.
  */
 @Data
 @Builder
@@ -20,20 +21,32 @@ public class BehaviorReport {
     /** Unique identifier of this report. */
     private UUID id;
 
-    /** Identifier of the student who submitted the report. */
+    /** Identifier of the student who submitted the report. Extracted from JWT, never sent by client. */
     private UUID reporterId;
 
-    /** Detailed description of the reported behavior. */
+    /** Detailed description of the reported behavior (required, max 1000 chars). */
     private String description;
 
-    /** Location where the behavior occurred. */
+    /** Location where the behavior occurred (optional). */
     private String location;
 
     /** Classification of the type of behavior reported. */
     private ReportType reportType;
 
+    /**
+     * Optional reference to the event or user involved.
+     * Can be an eventId or userId (stored as String UUID).
+     */
+    private String referenceId;
+
     /** Current processing status of the report. */
     private ReportStatus status;
+
+    /**
+     * Unique case number generated on creation.
+     * Format: RPT-YYYYMMDD-XXXX
+     */
+    private String caseNumber;
 
     /** Timestamp when the report was created. */
     private LocalDateTime createdAt;

@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Domain model representing a wellness resource available to students on campus.
- * Resources can include counselors, health services, cafeterias, libraries, etc.
+ * Domain model representing a wellness resource available to students on campus (RF23).
+ * For MENTAL_HEALTH resources, appointmentEmail and psychologistName are populated.
  */
 @Data
 @Builder
@@ -41,6 +41,17 @@ public class WellnessResource {
 
     /** Whether the resource is currently available for student use. */
     private boolean available;
+
+    /**
+     * Email address of the psychologist — only for MENTAL_HEALTH resources.
+     * Used to generate the appointment mailto link (RF23 HU-23-03).
+     */
+    private String appointmentEmail;
+
+    /**
+     * Name of the psychologist — only for MENTAL_HEALTH resources.
+     */
+    private String psychologistName;
 
     /** Timestamp when the resource was created in the system. */
     private LocalDateTime createdAt;

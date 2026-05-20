@@ -1,5 +1,6 @@
 package edu.eci.patricia.entrypoints.rest;
 
+import edu.eci.patricia.application.dto.AppointmentMailtoResponse;
 import edu.eci.patricia.application.dto.WellnessResourceRequest;
 import edu.eci.patricia.application.dto.WellnessResourceResponse;
 import edu.eci.patricia.domain.exception.ResourceNotFoundException;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,13 +35,13 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * REST controller exposing wellness resource endpoints.
- * Supports listing, retrieving, creating, updating, and deleting campus wellness resources.
+ * REST controller exposing wellness resource endpoints (RF23).
+ * Supports listing, retrieving, CRUD, and appointment mailto generation for MENTAL_HEALTH resources.
  */
 @RestController
 @RequestMapping("/api/v1/wellness/resources")
 @RequiredArgsConstructor
-@Tag(name = "Wellness Resources", description = "Endpoints for browsing and managing campus wellness resources")
+@Tag(name = "Wellness Resources", description = "Endpoints for browsing and managing campus wellness resources (RF23)")
 @SecurityRequirement(name = "bearerAuth")
 public class WellnessResourceController {
 
@@ -47,14 +49,14 @@ public class WellnessResourceController {
     private final ManageWellnessResourceUseCase manageResourceUseCase;
 
     /**
-     * Lists all wellness resources, with an optional category filter.
+     * Lists all wellness resources, with an optional category filter (RF23 HU-23-01 / HU-23-02).
      *
-     * @param category optional category to filter results
+     * @param category optional category filter (MENTAL_HEALTH, SPORTS, CULTURE, ACADEMIC_SUPPORT)
      * @return list of wellness resource responses
      */
     @GetMapping
     @Operation(summary = "List all wellness resources",
-               description = "Returns all available wellness resources. Optionally filter by category.")
+               description = "Returns all active wellness resources. Optionally filter by category.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resources retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT")
@@ -92,13 +94,41 @@ public class WellnessResourceController {
     }
 
     /**
+     * Generates a pre-built mailto link for requesting a psychological appointment (RF23 HU-23-03).
+     * Only available for resources with category MENTAL_HEALTH. Returns HTTP 400 otherwise.
+     *
+     * @param id             the UUID of the MENTAL_HEALTH wellness resource
+     * @param authentication the Spring Security authentication (student ID extracted from JWT)
+     * @return the mailto components ready for the client to open in an email app
+     */
+    @GetMapping("/{id}/cita-mailto")
+    @Operation(summary = "Generate appointment mailto for a MENTAL_HEALTH resource",
+               description = "Returns pre-built email components (to, subject, body) for requesting a " +
+                             "psychological appointment. Only available for MENTAL_HEALTH resources. " +
+                             "The system does NOT send the email — the student does from their email app.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Mailto components generated"),
+        @ApiResponse(responseCode = "400", description = "Resource is not MENTAL_HEALTH category"),
+        @ApiResponse(responseCode = "404", description = "Resource not found"),
+        @ApiResponse(responseCode = "401", description = "Unauthorized")
+    })
+    public ResponseEntity<AppointmentMailtoResponse> getAppointmentMailto(
+            @Parameter(description = "UUID of the MENTAL_HEALTH wellness resource") @PathVariable UUID id,
+            Authentication authentication) {
+
+        String studentId = (String) authentication.getPrincipal();
+        AppointmentMailtoResponse response = getResourcesUseCase.generateAppointmentMailto(id, studentId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Creates a new wellness resource.
      *
      * @param request the resource creation payload
      * @return the created resource with HTTP 201
      */
     @PostMapping
-    @Operation(summary = "Create a wellness resource", description = "Creates a new campus wellness resource (admin only).")
+    @Operation(summary = "Create a wellness resource", description = "Creates a new campus wellness resource.")
     @ApiResponses({
         @ApiResponse(responseCode = "201", description = "Resource created"),
         @ApiResponse(responseCode = "400", description = "Validation error"),
@@ -167,6 +197,8 @@ public class WellnessResourceController {
                 .contactInfo(request.getContactInfo())
                 .schedule(request.getSchedule())
                 .available(request.isAvailable())
+                .appointmentEmail(request.getAppointmentEmail())
+                .psychologistName(request.getPsychologistName())
                 .createdAt(LocalDateTime.now())
                 .build();
     }
@@ -181,6 +213,8 @@ public class WellnessResourceController {
                 .contactInfo(resource.getContactInfo())
                 .schedule(resource.getSchedule())
                 .available(resource.isAvailable())
+                .appointmentEmail(resource.getAppointmentEmail())
+                .psychologistName(resource.getPsychologistName())
                 .createdAt(resource.getCreatedAt())
                 .build();
     }

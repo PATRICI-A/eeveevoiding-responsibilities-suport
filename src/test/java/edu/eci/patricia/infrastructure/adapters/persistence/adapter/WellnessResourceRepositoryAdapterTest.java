@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,19 +46,19 @@ class WellnessResourceRepositoryAdapterTest {
 
         domainResource = WellnessResource.builder()
                 .id(resourceId)
-                .name("Yoga Studio")
-                .description("Daily yoga and meditation classes")
-                .category(WellnessCategory.PHYSICAL_HEALTH)
-                .location("Wellness Center")
+                .name("Sports Center")
+                .description("Daily fitness classes")
+                .category(WellnessCategory.SPORTS)
+                .location("Wellness Complex")
                 .available(true)
                 .build();
 
         entityResource = WellnessResourceEntity.builder()
                 .id(resourceId)
-                .name("Yoga Studio")
-                .description("Daily yoga and meditation classes")
-                .category(WellnessCategory.PHYSICAL_HEALTH)
-                .location("Wellness Center")
+                .name("Sports Center")
+                .description("Daily fitness classes")
+                .category(WellnessCategory.SPORTS)
+                .location("Wellness Complex")
                 .available(true)
                 .build();
     }
@@ -73,20 +72,20 @@ class WellnessResourceRepositoryAdapterTest {
         List<WellnessResource> result = adapter.findAll();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("Yoga Studio");
+        assertThat(result.get(0).getName()).isEqualTo("Sports Center");
     }
 
     @Test
     @DisplayName("findByCategory returns filtered domain resources")
     void findByCategory_returnsFilteredList() {
-        when(jpaRepository.findByCategory(WellnessCategory.PHYSICAL_HEALTH))
+        when(jpaRepository.findByCategory(WellnessCategory.SPORTS))
                 .thenReturn(List.of(entityResource));
         when(mapper.toDomain(entityResource)).thenReturn(domainResource);
 
-        List<WellnessResource> result = adapter.findByCategory(WellnessCategory.PHYSICAL_HEALTH);
+        List<WellnessResource> result = adapter.findByCategory(WellnessCategory.SPORTS);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCategory()).isEqualTo(WellnessCategory.PHYSICAL_HEALTH);
+        assertThat(result.get(0).getCategory()).isEqualTo(WellnessCategory.SPORTS);
     }
 
     @Test

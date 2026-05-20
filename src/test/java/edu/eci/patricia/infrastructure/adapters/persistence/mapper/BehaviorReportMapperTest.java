@@ -36,9 +36,10 @@ class BehaviorReportMapperTest {
                 .id(id)
                 .reporterId(reporterId)
                 .description("Harassment incident in classroom")
-                .location("Room 302")
                 .reportType(ReportType.HARASSMENT)
+                .referenceId("some-event-id")
                 .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0042")
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -49,9 +50,10 @@ class BehaviorReportMapperTest {
         assertThat(domain.getId()).isEqualTo(id);
         assertThat(domain.getReporterId()).isEqualTo(reporterId);
         assertThat(domain.getDescription()).isEqualTo("Harassment incident in classroom");
-        assertThat(domain.getLocation()).isEqualTo("Room 302");
         assertThat(domain.getReportType()).isEqualTo(ReportType.HARASSMENT);
+        assertThat(domain.getReferenceId()).isEqualTo("some-event-id");
         assertThat(domain.getStatus()).isEqualTo(ReportStatus.PENDING);
+        assertThat(domain.getCaseNumber()).isEqualTo("RPT-20260519-0042");
         assertThat(domain.getCreatedAt()).isEqualTo(now);
         assertThat(domain.getUpdatedAt()).isEqualTo(now);
     }
@@ -72,10 +74,10 @@ class BehaviorReportMapperTest {
         BehaviorReport domain = BehaviorReport.builder()
                 .id(id)
                 .reporterId(reporterId)
-                .description("Bullying in the cafeteria")
-                .location("Cafeteria")
-                .reportType(ReportType.BULLYING)
+                .description("Inappropriate behavior in the cafeteria")
+                .reportType(ReportType.INAPPROPRIATE_BEHAVIOR)
                 .status(ReportStatus.UNDER_REVIEW)
+                .caseNumber("RPT-20260519-0099")
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -85,10 +87,10 @@ class BehaviorReportMapperTest {
         assertThat(entity).isNotNull();
         assertThat(entity.getId()).isEqualTo(id);
         assertThat(entity.getReporterId()).isEqualTo(reporterId);
-        assertThat(entity.getDescription()).isEqualTo("Bullying in the cafeteria");
-        assertThat(entity.getLocation()).isEqualTo("Cafeteria");
-        assertThat(entity.getReportType()).isEqualTo(ReportType.BULLYING);
+        assertThat(entity.getDescription()).isEqualTo("Inappropriate behavior in the cafeteria");
+        assertThat(entity.getReportType()).isEqualTo(ReportType.INAPPROPRIATE_BEHAVIOR);
         assertThat(entity.getStatus()).isEqualTo(ReportStatus.UNDER_REVIEW);
+        assertThat(entity.getCaseNumber()).isEqualTo("RPT-20260519-0099");
         assertThat(entity.getCreatedAt()).isEqualTo(now);
         assertThat(entity.getUpdatedAt()).isEqualTo(now);
     }
@@ -109,6 +111,7 @@ class BehaviorReportMapperTest {
                     .description("Test description")
                     .reportType(type)
                     .status(ReportStatus.RESOLVED)
+                    .caseNumber("RPT-20260519-0001")
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
                     .build();
@@ -117,6 +120,7 @@ class BehaviorReportMapperTest {
 
             assertThat(roundTripped.getReportType()).isEqualTo(type);
             assertThat(roundTripped.getStatus()).isEqualTo(ReportStatus.RESOLVED);
+            assertThat(roundTripped.getCaseNumber()).isEqualTo("RPT-20260519-0001");
         }
     }
 }

@@ -1,5 +1,6 @@
 package edu.eci.patricia.domain.ports.in;
 
+import edu.eci.patricia.application.dto.AppointmentMailtoResponse;
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.domain.model.WellnessResource;
 
@@ -8,7 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Input port for querying wellness resources.
+ * Input port for querying wellness resources (RF23).
  * Defines the operations students may use to browse available campus resources.
  */
 public interface GetWellnessResourcesUseCase {
@@ -28,4 +29,14 @@ public interface GetWellnessResourcesUseCase {
      * @return an Optional containing the resource, or empty if not found
      */
     Optional<WellnessResource> getResourceById(UUID id);
+
+    /**
+     * Generates a pre-built mailto for requesting a psychological appointment (RF23 HU-23-03).
+     * Only valid for resources with category {@code MENTAL_HEALTH}.
+     *
+     * @param resourceId the UUID of the MENTAL_HEALTH resource
+     * @param studentId  the student's identifier extracted from the JWT
+     * @return the mailto components ready for the client to open in an email app
+     */
+    AppointmentMailtoResponse generateAppointmentMailto(UUID resourceId, String studentId);
 }

@@ -52,10 +52,10 @@ class BehaviorReportRepositoryAdapterTest {
         domainReport = BehaviorReport.builder()
                 .id(reportId)
                 .reporterId(reporterId)
-                .description("Violence on campus parking lot")
-                .location("Parking Lot B")
-                .reportType(ReportType.VIOLENCE)
+                .description("Offensive content shared in group chat")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
                 .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0007")
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -63,10 +63,10 @@ class BehaviorReportRepositoryAdapterTest {
         entityReport = BehaviorReportEntity.builder()
                 .id(reportId)
                 .reporterId(reporterId)
-                .description("Violence on campus parking lot")
-                .location("Parking Lot B")
-                .reportType(ReportType.VIOLENCE)
+                .description("Offensive content shared in group chat")
+                .reportType(ReportType.OFFENSIVE_CONTENT)
                 .status(ReportStatus.PENDING)
+                .caseNumber("RPT-20260519-0007")
                 .createdAt(now)
                 .updatedAt(now)
                 .build();
@@ -83,6 +83,7 @@ class BehaviorReportRepositoryAdapterTest {
 
         assertThat(saved).isNotNull();
         assertThat(saved.getId()).isEqualTo(reportId);
+        assertThat(saved.getCaseNumber()).isEqualTo("RPT-20260519-0007");
         verify(jpaRepository).save(entityReport);
     }
 

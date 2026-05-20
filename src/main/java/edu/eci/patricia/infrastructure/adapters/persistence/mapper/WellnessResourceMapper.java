@@ -11,12 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class WellnessResourceMapper {
 
-    /**
-     * Converts a JPA entity to a domain model.
-     *
-     * @param entity the JPA entity to convert
-     * @return the corresponding domain model, or null if entity is null
-     */
     public WellnessResource toDomain(WellnessResourceEntity entity) {
         if (entity == null) {
             return null;
@@ -30,16 +24,12 @@ public class WellnessResourceMapper {
                 .contactInfo(entity.getContactInfo())
                 .schedule(entity.getSchedule())
                 .available(entity.isAvailable())
+                .appointmentEmail(entity.getAppointmentEmail())
+                .psychologistName(entity.getPsychologistName())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
 
-    /**
-     * Converts a domain model to a JPA entity.
-     *
-     * @param domain the domain model to convert
-     * @return the corresponding JPA entity, or null if domain is null
-     */
     public WellnessResourceEntity toEntity(WellnessResource domain) {
         if (domain == null) {
             return null;
@@ -53,6 +43,8 @@ public class WellnessResourceMapper {
                 .contactInfo(domain.getContactInfo())
                 .schedule(domain.getSchedule())
                 .available(domain.isAvailable())
+                .appointmentEmail(domain.getAppointmentEmail())
+                .psychologistName(domain.getPsychologistName())
                 .createdAt(domain.getCreatedAt())
                 .build();
     }

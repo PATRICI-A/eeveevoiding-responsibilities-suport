@@ -56,13 +56,13 @@ public class WellnessSurveyService implements SubmitSurveyUseCase, GetRecommenda
     /**
      * {@inheritDoc}
      *
-     * <p>Recommendation rules:</p>
+     * <p>Recommendation rules (aligned with RF23 WellnessCategory values):</p>
      * <ul>
      *   <li>moodScore &lt; 3    → MENTAL_HEALTH resources</li>
-     *   <li>stressScore &lt; 3  → MENTAL_HEALTH + PHYSICAL_HEALTH resources</li>
-     *   <li>sleepScore &lt; 3   → PHYSICAL_HEALTH resources</li>
-     *   <li>socialScore &lt; 3  → SOCIAL resources</li>
-     *   <li>academicScore &lt; 3 → ACADEMIC resources</li>
+     *   <li>stressScore &lt; 3  → MENTAL_HEALTH + SPORTS resources</li>
+     *   <li>sleepScore &lt; 3   → SPORTS resources</li>
+     *   <li>socialScore &lt; 3  → CULTURE resources</li>
+     *   <li>academicScore &lt; 3 → ACADEMIC_SUPPORT resources</li>
      * </ul>
      */
     @Override
@@ -75,16 +75,16 @@ public class WellnessSurveyService implements SubmitSurveyUseCase, GetRecommenda
         }
         if (stressScore < SCORE_THRESHOLD) {
             categoriesToFetch.add(WellnessCategory.MENTAL_HEALTH);
-            categoriesToFetch.add(WellnessCategory.PHYSICAL_HEALTH);
+            categoriesToFetch.add(WellnessCategory.SPORTS);
         }
         if (sleepScore < SCORE_THRESHOLD) {
-            categoriesToFetch.add(WellnessCategory.PHYSICAL_HEALTH);
+            categoriesToFetch.add(WellnessCategory.SPORTS);
         }
         if (socialScore < SCORE_THRESHOLD) {
-            categoriesToFetch.add(WellnessCategory.SOCIAL);
+            categoriesToFetch.add(WellnessCategory.CULTURE);
         }
         if (academicScore < SCORE_THRESHOLD) {
-            categoriesToFetch.add(WellnessCategory.ACADEMIC);
+            categoriesToFetch.add(WellnessCategory.ACADEMIC_SUPPORT);
         }
 
         // Use a LinkedHashSet of ids to avoid duplicate resources across categories

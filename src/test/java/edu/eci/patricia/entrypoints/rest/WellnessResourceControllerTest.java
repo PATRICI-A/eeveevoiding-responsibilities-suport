@@ -2,8 +2,10 @@ package edu.eci.patricia.entrypoints.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.eci.patricia.application.dto.AppointmentMailtoResponse;
 import edu.eci.patricia.application.dto.WellnessResourceRequest;
 import edu.eci.patricia.domain.exception.ResourceNotFoundException;
+import edu.eci.patricia.domain.exception.WellnessException;
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.domain.model.WellnessResource;
 import edu.eci.patricia.domain.ports.in.GetWellnessResourcesUseCase;
@@ -43,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Integration tests for {@link WellnessResourceController} with full Spring Security context.
- * Uses real JWT tokens so the JwtAuthFilter can authenticate requests correctly.
+ * Uses real JWT tokens so JwtAuthFilter authenticates requests correctly.
  * Service layer is mocked to focus on controller logic.
  */
 @SpringBootTest
@@ -75,6 +77,7 @@ class WellnessResourceControllerTest {
     private String bearerToken;
     private UUID resourceId;
     private WellnessResource sampleResource;
+    private WellnessResource mentalHealthResource;
     private WellnessResourceRequest sampleRequest;
 
     @BeforeEach
@@ -92,6 +95,18 @@ class WellnessResourceControllerTest {
         resourceId = UUID.randomUUID();
         sampleResource = WellnessResource.builder()
                 .id(resourceId)
+                .name("Sports Center")
+                .description("Daily fitness and sports activities")
+                .category(WellnessCategory.SPORTS)
+                .location("Campus Sports Complex")
+                .contactInfo("sports@eci.edu.co")
+                .schedule("Mon-Fri 06:00-22:00")
+                .available(true)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        mentalHealthResource = WellnessResource.builder()
+                .id(resourceId)
                 .name("Counseling Center")
                 .description("Individual and group therapy sessions")
                 .category(WellnessCategory.MENTAL_HEALTH)
@@ -99,16 +114,18 @@ class WellnessResourceControllerTest {
                 .contactInfo("counseling@eci.edu.co")
                 .schedule("Mon-Fri 08:00-17:00")
                 .available(true)
+                .appointmentEmail("psicologia@eci.edu.co")
+                .psychologistName("Dra. María García")
                 .createdAt(LocalDateTime.now())
                 .build();
 
         sampleRequest = WellnessResourceRequest.builder()
-                .name("Counseling Center")
-                .description("Individual and group therapy sessions")
-                .category(WellnessCategory.MENTAL_HEALTH)
-                .location("Building A, Room 101")
-                .contactInfo("counseling@eci.edu.co")
-                .schedule("Mon-Fri 08:00-17:00")
+                .name("Sports Center")
+                .description("Daily fitness and sports activities")
+                .category(WellnessCategory.SPORTS)
+                .location("Campus Sports Complex")
+                .contactInfo("sports@eci.edu.co")
+                .schedule("Mon-Fri 06:00-22:00")
                 .available(true)
                 .build();
     }
@@ -121,21 +138,45 @@ class WellnessResourceControllerTest {
         mockMvc.perform(get("/api/v1/wellness/resources")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Counseling Center"))
-                .andExpect(jsonPath("$[0].category").value("MENTAL_HEALTH"));
+                .andExpect(jsonPath("$[0].name").value("Sports Center"))
+                .andExpect(jsonPath("$[0].category").value("SPORTS"));
     }
 
     @Test
     @DisplayName("GET /api/v1/wellness/resources?category=MENTAL_HEALTH returns filtered list")
     void getAllResources_withCategory_returnsFiltered() throws Exception {
         when(getResourcesUseCase.getAllResources(WellnessCategory.MENTAL_HEALTH))
-                .thenReturn(List.of(sampleResource));
+                .thenReturn(List.of(mentalHealthResource));
 
         mockMvc.perform(get("/api/v1/wellness/resources")
                         .param("category", "MENTAL_HEALTH")
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].category").value("MENTAL_HEALTH"));
+                .andExpect(jsonPath("$[0].category").value("MENTAL_HEALTH"))
+                .andExpect(jsonPath("$[0].appointmentEmail").value("psicologia@eci.edu.co"))
+                .andExpect(jsonPath("$[0].psychologistName").value("Dra. María García"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/wellness/resources?category=ACADEMIC_SUPPORT returns filtered list")
+    void getAllResources_withAcademicSupportCategory_returnsFiltered() throws Exception {
+        WellnessResource academicResource = WellnessResource.builder()
+                .id(UUID.randomUUID())
+                .name("Library")
+                .description("Study space and tutoring")
+                .category(WellnessCategory.ACADEMIC_SUPPORT)
+                .location("Main Building")
+                .available(true)
+                .build();
+
+        when(getResourcesUseCase.getAllResources(WellnessCategory.ACADEMIC_SUPPORT))
+                .thenReturn(List.of(academicResource));
+
+        mockMvc.perform(get("/api/v1/wellness/resources")
+                        .param("category", "ACADEMIC_SUPPORT")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].category").value("ACADEMIC_SUPPORT"));
     }
 
     @Test
@@ -147,7 +188,7 @@ class WellnessResourceControllerTest {
                         .header(HttpHeaders.AUTHORIZATION, bearerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(resourceId.toString()))
-                .andExpect(jsonPath("$.name").value("Counseling Center"));
+                .andExpect(jsonPath("$.name").value("Sports Center"));
     }
 
     @Test
@@ -162,6 +203,49 @@ class WellnessResourceControllerTest {
     }
 
     @Test
+    @DisplayName("GET /api/v1/wellness/resources/{id}/cita-mailto returns 200 for MENTAL_HEALTH resource")
+    void getAppointmentMailto_mentalHealthResource_returns200() throws Exception {
+        AppointmentMailtoResponse mailtoResponse = AppointmentMailtoResponse.builder()
+                .appointmentEmailTo("psicologia@eci.edu.co")
+                .appointmentEmailSubject("Solicitud de cita psicológica - PATRICI.A")
+                .appointmentEmailBody("Estimado/a Dra. María García, solicito una cita...")
+                .build();
+
+        when(getResourcesUseCase.generateAppointmentMailto(eq(resourceId), any(String.class)))
+                .thenReturn(mailtoResponse);
+
+        mockMvc.perform(get("/api/v1/wellness/resources/{id}/cita-mailto", resourceId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.appointmentEmailTo").value("psicologia@eci.edu.co"))
+                .andExpect(jsonPath("$.appointmentEmailSubject").value("Solicitud de cita psicológica - PATRICI.A"))
+                .andExpect(jsonPath("$.appointmentEmailBody").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/wellness/resources/{id}/cita-mailto returns 400 for non-MENTAL_HEALTH resource")
+    void getAppointmentMailto_nonMentalHealthResource_returns400() throws Exception {
+        when(getResourcesUseCase.generateAppointmentMailto(eq(resourceId), any(String.class)))
+                .thenThrow(new WellnessException("Appointment mailto is only available for MENTAL_HEALTH resources"));
+
+        mockMvc.perform(get("/api/v1/wellness/resources/{id}/cita-mailto", resourceId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/wellness/resources/{id}/cita-mailto returns 404 when resource not found")
+    void getAppointmentMailto_resourceNotFound_returns404() throws Exception {
+        UUID unknownId = UUID.randomUUID();
+        when(getResourcesUseCase.generateAppointmentMailto(eq(unknownId), any(String.class)))
+                .thenThrow(new ResourceNotFoundException("Wellness resource not found with id: " + unknownId));
+
+        mockMvc.perform(get("/api/v1/wellness/resources/{id}/cita-mailto", unknownId)
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
     @DisplayName("POST /api/v1/wellness/resources returns 201 when valid")
     void createResource_valid_returns201() throws Exception {
         when(manageResourceUseCase.createResource(any(WellnessResource.class))).thenReturn(sampleResource);
@@ -171,7 +255,34 @@ class WellnessResourceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(sampleRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Counseling Center"));
+                .andExpect(jsonPath("$.name").value("Sports Center"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/wellness/resources returns 201 with MENTAL_HEALTH resource including psychologist fields")
+    void createResource_mentalHealth_returns201WithPsychologistFields() throws Exception {
+        WellnessResourceRequest mentalHealthRequest = WellnessResourceRequest.builder()
+                .name("Counseling Center")
+                .description("Individual therapy sessions")
+                .category(WellnessCategory.MENTAL_HEALTH)
+                .location("Building A, Room 101")
+                .contactInfo("counseling@eci.edu.co")
+                .schedule("Mon-Fri 08:00-17:00")
+                .available(true)
+                .appointmentEmail("psicologia@eci.edu.co")
+                .psychologistName("Dra. María García")
+                .build();
+
+        when(manageResourceUseCase.createResource(any(WellnessResource.class))).thenReturn(mentalHealthResource);
+
+        mockMvc.perform(post("/api/v1/wellness/resources")
+                        .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(mentalHealthRequest)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.category").value("MENTAL_HEALTH"))
+                .andExpect(jsonPath("$.appointmentEmail").value("psicologia@eci.edu.co"))
+                .andExpect(jsonPath("$.psychologistName").value("Dra. María García"));
     }
 
     @Test
@@ -179,7 +290,7 @@ class WellnessResourceControllerTest {
     void createResource_missingName_returns400() throws Exception {
         WellnessResourceRequest invalid = WellnessResourceRequest.builder()
                 .description("A description")
-                .category(WellnessCategory.MENTAL_HEALTH)
+                .category(WellnessCategory.SPORTS)
                 .location("Room 101")
                 .build();
 
