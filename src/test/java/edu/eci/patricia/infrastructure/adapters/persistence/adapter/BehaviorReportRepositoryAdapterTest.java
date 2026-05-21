@@ -23,9 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link BehaviorReportRepositoryAdapter}.
- */
 @ExtendWith(MockitoExtension.class)
 class BehaviorReportRepositoryAdapterTest {
 
@@ -124,7 +121,7 @@ class BehaviorReportRepositoryAdapterTest {
     }
 
     @Test
-    @DisplayName("findByReporterId returns empty list when reporter has no reports")
+    @DisplayName("findByReporterId returns empty list when no reports")
     void findByReporterId_noReports_returnsEmptyList() {
         UUID otherReporter = UUID.randomUUID();
         when(jpaRepository.findByReporterId(otherReporter)).thenReturn(List.of());

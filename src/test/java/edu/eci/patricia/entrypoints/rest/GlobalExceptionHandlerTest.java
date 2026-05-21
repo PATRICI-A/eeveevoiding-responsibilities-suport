@@ -18,9 +18,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link GlobalExceptionHandler} covering all exception handling paths.
- */
 class GlobalExceptionHandlerTest {
 
     private GlobalExceptionHandler handler;
@@ -31,7 +28,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleResourceNotFoundException returns 404 with correct body")
+    @DisplayName("handleResourceNotFoundException returns 404")
     void handleResourceNotFoundException_returns404() {
         ResourceNotFoundException ex = new ResourceNotFoundException("Resource not found with id: 123");
 
@@ -45,7 +42,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleWellnessException with 'Access denied' message returns 403")
+    @DisplayName("WellnessException with 'Access denied' returns 403")
     void handleWellnessException_accessDenied_returns403() {
         WellnessException ex = new WellnessException("Access denied: you are not the reporter");
 
@@ -56,7 +53,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleWellnessException with business rule message returns 400")
+    @DisplayName("WellnessException with business rule message returns 400")
     void handleWellnessException_businessRule_returns400() {
         WellnessException ex = new WellnessException("Score must be between 1 and 5");
 
@@ -86,7 +83,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleValidationException returns 400 with null message falls back to 'Invalid value'")
+    @DisplayName("handleValidationException falls back to 'Invalid value' for null message")
     void handleValidationException_nullMessage_usesDefaultMessage() {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         BindingResult bindingResult = mock(BindingResult.class);
@@ -104,7 +101,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleGenericException returns 500 for unexpected errors")
+    @DisplayName("handleGenericException returns 500")
     void handleGenericException_returns500() {
         Exception ex = new RuntimeException("Something went very wrong");
 

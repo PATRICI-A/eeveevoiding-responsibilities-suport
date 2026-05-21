@@ -13,9 +13,6 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Unit tests for {@link BehaviorReportMapper}.
- */
 class BehaviorReportMapperTest {
 
     private BehaviorReportMapper mapper;
@@ -102,7 +99,7 @@ class BehaviorReportMapperTest {
     }
 
     @Test
-    @DisplayName("Round-trip entity→domain→entity preserves all report types and statuses")
+    @DisplayName("Round-trip preserves all report types and statuses")
     void roundTrip_entityToDomainToEntity_preservesTypeAndStatus() {
         for (ReportType type : ReportType.values()) {
             BehaviorReportEntity original = BehaviorReportEntity.builder()

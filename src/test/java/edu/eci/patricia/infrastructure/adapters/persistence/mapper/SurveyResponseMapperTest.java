@@ -1,20 +1,16 @@
 package edu.eci.patricia.infrastructure.adapters.persistence.mapper;
 
 import edu.eci.patricia.domain.model.SurveyResponse;
-import edu.eci.patricia.domain.model.WellbeingLevel;
 import edu.eci.patricia.infrastructure.adapters.persistence.entity.SurveyResponseEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * Unit tests for {@link SurveyResponseMapper}.
- */
 class SurveyResponseMapperTest {
 
     private SurveyResponseMapper mapper;
@@ -27,20 +23,15 @@ class SurveyResponseMapperTest {
     @Test
     @DisplayName("toDomain converts entity to domain model correctly")
     void toDomain_validEntity_returnsDomainModel() {
-        UUID id = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+        String id = "550e8400-e29b-41d4-a716-446655440000";
+        String studentId = "student-123";
         LocalDateTime now = LocalDateTime.now();
+        Map<String, String> answers = Map.of("P01", "Bien", "P02", "3");
 
         SurveyResponseEntity entity = SurveyResponseEntity.builder()
                 .id(id)
-                .userId(userId)
-                .moodScore(4)
-                .stressScore(3)
-                .sleepScore(4)
-                .socialScore(5)
-                .academicScore(3)
-                .averageScore(3.8)
-                .wellbeingLevel(WellbeingLevel.GOOD)
+                .studentId(studentId)
+                .answers(answers)
                 .submittedAt(now)
                 .build();
 
@@ -48,14 +39,8 @@ class SurveyResponseMapperTest {
 
         assertThat(domain).isNotNull();
         assertThat(domain.getId()).isEqualTo(id);
-        assertThat(domain.getUserId()).isEqualTo(userId);
-        assertThat(domain.getMoodScore()).isEqualTo(4);
-        assertThat(domain.getStressScore()).isEqualTo(3);
-        assertThat(domain.getSleepScore()).isEqualTo(4);
-        assertThat(domain.getSocialScore()).isEqualTo(5);
-        assertThat(domain.getAcademicScore()).isEqualTo(3);
-        assertThat(domain.getAverageScore()).isEqualTo(3.8);
-        assertThat(domain.getWellbeingLevel()).isEqualTo(WellbeingLevel.GOOD);
+        assertThat(domain.getStudentId()).isEqualTo(studentId);
+        assertThat(domain.getAnswers()).isEqualTo(answers);
         assertThat(domain.getSubmittedAt()).isEqualTo(now);
     }
 
@@ -68,20 +53,20 @@ class SurveyResponseMapperTest {
     @Test
     @DisplayName("toEntity converts domain model to entity correctly")
     void toEntity_validDomain_returnsEntity() {
-        UUID id = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+        String id = "660e8400-e29b-41d4-a716-446655440001";
+        String studentId = "student-456";
         LocalDateTime now = LocalDateTime.now();
+        Map<String, String> answers = Map.of(
+                "P01", "Mal", "P02", "5", "P03", "Nunca",
+                "P04", "Mala", "P05", "Casi nunca", "P06", "No mucho",
+                "P07", "Rara vez", "P08", "2", "P09", "Con frecuencia",
+                "P10", "Manejo del estrés"
+        );
 
         SurveyResponse domain = SurveyResponse.builder()
                 .id(id)
-                .userId(userId)
-                .moodScore(1)
-                .stressScore(1)
-                .sleepScore(2)
-                .socialScore(1)
-                .academicScore(2)
-                .averageScore(1.4)
-                .wellbeingLevel(WellbeingLevel.CRITICAL)
+                .studentId(studentId)
+                .answers(answers)
                 .submittedAt(now)
                 .build();
 
@@ -89,10 +74,8 @@ class SurveyResponseMapperTest {
 
         assertThat(entity).isNotNull();
         assertThat(entity.getId()).isEqualTo(id);
-        assertThat(entity.getUserId()).isEqualTo(userId);
-        assertThat(entity.getMoodScore()).isEqualTo(1);
-        assertThat(entity.getAverageScore()).isEqualTo(1.4);
-        assertThat(entity.getWellbeingLevel()).isEqualTo(WellbeingLevel.CRITICAL);
+        assertThat(entity.getStudentId()).isEqualTo(studentId);
+        assertThat(entity.getAnswers()).isEqualTo(answers);
         assertThat(entity.getSubmittedAt()).isEqualTo(now);
     }
 
@@ -103,28 +86,23 @@ class SurveyResponseMapperTest {
     }
 
     @Test
-    @DisplayName("Round-trip entity→domain→entity preserves all scores")
-    void roundTrip_entityToDomainToEntity_preservesScores() {
-        UUID id = UUID.randomUUID();
-        UUID userId = UUID.randomUUID();
+    @DisplayName("Round-trip preserves all data")
+    void roundTrip_preservesData() {
+        String id = "770e8400-e29b-41d4-a716-446655440002";
+        String studentId = "student-789";
+        Map<String, String> answers = Map.of("P01", "Bien", "P09", "A veces");
 
         SurveyResponseEntity original = SurveyResponseEntity.builder()
                 .id(id)
-                .userId(userId)
-                .moodScore(5)
-                .stressScore(5)
-                .sleepScore(5)
-                .socialScore(5)
-                .academicScore(5)
-                .averageScore(5.0)
-                .wellbeingLevel(WellbeingLevel.EXCELLENT)
+                .studentId(studentId)
+                .answers(answers)
                 .submittedAt(LocalDateTime.now())
                 .build();
 
         SurveyResponseEntity roundTripped = mapper.toEntity(mapper.toDomain(original));
 
-        assertThat(roundTripped.getMoodScore()).isEqualTo(5);
-        assertThat(roundTripped.getAverageScore()).isEqualTo(5.0);
-        assertThat(roundTripped.getWellbeingLevel()).isEqualTo(WellbeingLevel.EXCELLENT);
+        assertThat(roundTripped.getId()).isEqualTo(id);
+        assertThat(roundTripped.getStudentId()).isEqualTo(studentId);
+        assertThat(roundTripped.getAnswers()).isEqualTo(answers);
     }
 }

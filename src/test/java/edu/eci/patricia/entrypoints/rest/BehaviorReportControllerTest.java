@@ -3,6 +3,8 @@ package edu.eci.patricia.entrypoints.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.eci.patricia.application.dto.BehaviorReportRequest;
+import edu.eci.patricia.domain.exception.ResourceNotFoundException;
+import edu.eci.patricia.domain.exception.WellnessException;
 import edu.eci.patricia.domain.model.BehaviorReport;
 import edu.eci.patricia.domain.model.ReportStatus;
 import edu.eci.patricia.domain.model.ReportType;
@@ -13,8 +15,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
@@ -31,19 +33,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Integration tests for {@link BehaviorReportController} with full Spring Security context.
- * Uses real JWT tokens so JwtAuthFilter authenticates requests correctly.
- * Service layer is mocked to focus on controller logic.
- */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
         "spring.datasource.url=jdbc:h2:mem:reporttestdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false",
@@ -103,7 +99,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports returns 201 with caseNumber when valid")
+    @DisplayName("POST /api/v1/wellness/reports returns 201 with caseNumber")
     void submitReport_valid_returns201WithCaseNumber() throws Exception {
         when(submitBehaviorReportUseCase.submitReport(any(BehaviorReport.class))).thenReturn(sampleReport);
 
@@ -119,7 +115,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports with INAPPROPRIATE_BEHAVIOR type returns 201")
+    @DisplayName("POST returns 201 for INAPPROPRIATE_BEHAVIOR type")
     void submitReport_inappropriateBehavior_returns201() throws Exception {
         BehaviorReport inappropriateReport = BehaviorReport.builder()
                 .id(UUID.randomUUID())
@@ -149,7 +145,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports with referenceId returns 201")
+    @DisplayName("POST returns 201 with referenceId")
     void submitReport_withReferenceId_returns201() throws Exception {
         String refId = UUID.randomUUID().toString();
         BehaviorReportRequest requestWithRef = BehaviorReportRequest.builder()
@@ -182,7 +178,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports returns 400 when description missing")
+    @DisplayName("POST returns 400 when description missing")
     void submitReport_missingDescription_returns400() throws Exception {
         BehaviorReportRequest invalid = BehaviorReportRequest.builder()
                 .reportType(ReportType.HARASSMENT)
@@ -196,7 +192,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/v1/wellness/reports returns 400 when reportType missing")
+    @DisplayName("POST returns 400 when reportType missing")
     void submitReport_missingReportType_returns400() throws Exception {
         BehaviorReportRequest invalid = BehaviorReportRequest.builder()
                 .description("Some description")
@@ -250,7 +246,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/wellness/reports/my-reports returns 200 with reporter's list")
+    @DisplayName("GET /api/v1/wellness/reports/my-reports returns 200 with list")
     void getMyReports_returns200WithList() throws Exception {
         when(submitBehaviorReportUseCase.getReportsByReporter(userId)).thenReturn(List.of(sampleReport));
 
@@ -261,7 +257,7 @@ class BehaviorReportControllerTest {
     }
 
     @Test
-    @DisplayName("GET /api/v1/wellness/reports/my-reports returns empty list when no reports")
+    @DisplayName("GET /api/v1/wellness/reports/my-reports returns empty list when none")
     void getMyReports_noReports_returnsEmptyList() throws Exception {
         when(submitBehaviorReportUseCase.getReportsByReporter(userId)).thenReturn(Collections.emptyList());
 

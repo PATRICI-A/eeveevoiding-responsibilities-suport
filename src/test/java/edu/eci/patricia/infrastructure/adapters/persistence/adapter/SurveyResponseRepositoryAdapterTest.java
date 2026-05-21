@@ -1,10 +1,9 @@
 package edu.eci.patricia.infrastructure.adapters.persistence.adapter;
 
 import edu.eci.patricia.domain.model.SurveyResponse;
-import edu.eci.patricia.domain.model.WellbeingLevel;
 import edu.eci.patricia.infrastructure.adapters.persistence.entity.SurveyResponseEntity;
 import edu.eci.patricia.infrastructure.adapters.persistence.mapper.SurveyResponseMapper;
-import edu.eci.patricia.infrastructure.adapters.persistence.repository.SurveyResponseJpaRepository;
+import edu.eci.patricia.infrastructure.adapters.persistence.repository.JpaSurveyResponseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,21 +13,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link SurveyResponseRepositoryAdapter}.
- */
 @ExtendWith(MockitoExtension.class)
 class SurveyResponseRepositoryAdapterTest {
 
     @Mock
-    private SurveyResponseJpaRepository jpaRepository;
+    private JpaSurveyResponseRepository jpaRepository;
 
     @Mock
     private SurveyResponseMapper mapper;
@@ -36,77 +32,61 @@ class SurveyResponseRepositoryAdapterTest {
     @InjectMocks
     private SurveyResponseRepositoryAdapter adapter;
 
-    private UUID userId;
+    private String studentId;
     private SurveyResponse domainSurvey;
     private SurveyResponseEntity entitySurvey;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
+        studentId = "student-uuid-123";
 
         domainSurvey = SurveyResponse.builder()
-                .id(UUID.randomUUID())
-                .userId(userId)
-                .moodScore(4)
-                .stressScore(3)
-                .sleepScore(4)
-                .socialScore(5)
-                .academicScore(4)
-                .averageScore(4.0)
-                .wellbeingLevel(WellbeingLevel.GOOD)
+                .id("survey-uuid-456")
+                .studentId(studentId)
+                .answers(Map.of("P01", "Bien", "P02", "3"))
                 .submittedAt(LocalDateTime.now())
                 .build();
 
         entitySurvey = SurveyResponseEntity.builder()
-                .id(domainSurvey.getId())
-                .userId(userId)
-                .moodScore(4)
-                .stressScore(3)
-                .sleepScore(4)
-                .socialScore(5)
-                .academicScore(4)
-                .averageScore(4.0)
-                .wellbeingLevel(WellbeingLevel.GOOD)
+                .id("survey-uuid-456")
+                .studentId(studentId)
+                .answers(Map.of("P01", "Bien", "P02", "3"))
                 .submittedAt(domainSurvey.getSubmittedAt())
                 .build();
     }
 
     @Test
-    @DisplayName("save persists survey and returns mapped domain")
-    void save_persistsAndReturnsDomain() {
+    @DisplayName("save persists survey via JPA")
+    void save_persistsSurvey() {
         when(mapper.toEntity(domainSurvey)).thenReturn(entitySurvey);
-        when(jpaRepository.save(entitySurvey)).thenReturn(entitySurvey);
-        when(mapper.toDomain(entitySurvey)).thenReturn(domainSurvey);
 
-        SurveyResponse saved = adapter.save(domainSurvey);
+        adapter.save(domainSurvey);
 
-        assertThat(saved).isNotNull();
-        assertThat(saved.getUserId()).isEqualTo(userId);
         verify(jpaRepository).save(entitySurvey);
     }
 
     @Test
-    @DisplayName("findByUserId returns list of surveys ordered by date")
-    void findByUserId_returnsMappedList() {
-        when(jpaRepository.findByUserIdOrderBySubmittedAtDesc(userId))
-                .thenReturn(List.of(entitySurvey));
+    @DisplayName("findLatestByStudentId returns mapped domain when found")
+    void findLatestByStudentId_returnsMappedDomain() {
+        when(jpaRepository.findTopByStudentIdOrderBySubmittedAtDesc(studentId))
+                .thenReturn(Optional.of(entitySurvey));
         when(mapper.toDomain(entitySurvey)).thenReturn(domainSurvey);
 
-        List<SurveyResponse> result = adapter.findByUserId(userId);
+        Optional<SurveyResponse> result = adapter.findLatestByStudentId(studentId);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getUserId()).isEqualTo(userId);
-        verify(jpaRepository).findByUserIdOrderBySubmittedAtDesc(userId);
+        assertThat(result).isPresent();
+        assertThat(result.get().getStudentId()).isEqualTo(studentId);
+        verify(jpaRepository).findTopByStudentIdOrderBySubmittedAtDesc(studentId);
     }
 
     @Test
-    @DisplayName("findByUserId returns empty list when no surveys exist for user")
-    void findByUserId_noSurveys_returnsEmptyList() {
-        UUID unknownUser = UUID.randomUUID();
-        when(jpaRepository.findByUserIdOrderBySubmittedAtDesc(unknownUser))
-                .thenReturn(List.of());
+    @DisplayName("findLatestByStudentId returns empty when no surveys")
+    void findLatestByStudentId_noSurveys_returnsEmpty() {
+        String unknownStudent = "unknown-student";
+        when(jpaRepository.findTopByStudentIdOrderBySubmittedAtDesc(unknownStudent))
+                .thenReturn(Optional.empty());
 
-        List<SurveyResponse> result = adapter.findByUserId(unknownUser);
+        Optional<SurveyResponse> result = adapter.findLatestByStudentId(unknownStudent);
 
         assertThat(result).isEmpty();
     }

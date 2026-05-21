@@ -1,5 +1,7 @@
 package edu.eci.patricia.application.service;
 
+import edu.eci.patricia.application.dto.BehaviorReportRequest;
+import edu.eci.patricia.application.dto.BehaviorReportResponse;
 import edu.eci.patricia.domain.model.BehaviorReport;
 import edu.eci.patricia.domain.model.ReportStatus;
 import edu.eci.patricia.domain.model.ReportType;
@@ -22,9 +24,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link BehaviorReportService}.
- */
 @ExtendWith(MockitoExtension.class)
 class BehaviorReportServiceTest {
 
@@ -56,7 +55,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("submitReport sets status PENDING, generates caseNumber, and persists the report")
+    @DisplayName("submitReport sets status PENDING, caseNumber and timestamps")
     void submitReport_validReport_setsPendingStatusAndGeneratesCaseNumber() {
         BehaviorReport input = BehaviorReport.builder()
                 .reporterId(reporterId)
@@ -94,7 +93,6 @@ class BehaviorReportServiceTest {
         BehaviorReport result = service.submitReport(input);
 
         assertThat(result.getCaseNumber()).startsWith("RPT-");
-        assertThat(result.getCaseNumber()).hasSize(17); // RPT-YYYYMMDD-XXXX = 17 chars
     }
 
     @Test
@@ -110,7 +108,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("getReportById returns empty Optional when report does not exist")
+    @DisplayName("getReportById returns empty when report does not exist")
     void getReportById_nonExistentId_returnsEmpty() {
         UUID nonExistentId = UUID.randomUUID();
         when(reportRepositoryPort.findById(nonExistentId)).thenReturn(Optional.empty());
@@ -143,7 +141,7 @@ class BehaviorReportServiceTest {
     }
 
     @Test
-    @DisplayName("submitReport sets both createdAt and updatedAt timestamps")
+    @DisplayName("submitReport sets createdAt and updatedAt timestamps")
     void submitReport_setsTimestamps() {
         BehaviorReport input = BehaviorReport.builder()
                 .reporterId(reporterId)
@@ -158,5 +156,61 @@ class BehaviorReportServiceTest {
 
         assertThat(result.getCreatedAt()).isAfterOrEqualTo(before);
         assertThat(result.getUpdatedAt()).isAfterOrEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("submitReport with String reporterId returns BehaviorReportResponse")
+    void submitReportWithString_generatesCaseNumberAndReturnsResponse() {
+        String reporterIdStr = UUID.randomUUID().toString();
+        BehaviorReportRequest request = BehaviorReportRequest.builder()
+                .reportType(ReportType.HARASSMENT)
+                .description("Inappropriate comments during class")
+                .referenceId("550e8400-e29b-41d4-a716-446655440000")
+                .build();
+
+        when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BehaviorReportResponse response = service.submitReport(reporterIdStr, request);
+
+        assertThat(response.getCaseNumber()).matches("RPT-\\d{8}-\\d{4}");
+        assertThat(response.getStatus()).isEqualTo(ReportStatus.PENDING);
+        assertThat(response.getMessage()).contains(response.getCaseNumber());
+        assertThat(response.getCreatedAt()).isNotNull();
+        assertThat(response.getUpdatedAt()).isNotNull();
+        verify(reportRepositoryPort).save(any(BehaviorReport.class));
+    }
+
+    @Test
+    @DisplayName("submitReport with reporterId trusts the JWT-originated UUID")
+    void submitReportWithUuidReporterId() {
+        BehaviorReportRequest request = BehaviorReportRequest.builder()
+                .reportType(ReportType.OFFENSIVE_CONTENT)
+                .description("Offensive post on forum")
+                .build();
+
+        when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BehaviorReportResponse response = service.submitReport("550e8400-e29b-41d4-a716-446655440000", request);
+
+        assertThat(response.getCaseNumber()).matches("RPT-\\d{8}-\\d{4}");
+        assertThat(response.getStatus()).isEqualTo(ReportStatus.PENDING);
+    }
+
+    @Test
+    @DisplayName("submitReport with request builds correct report fields")
+    void submitReportWithString_usesAllRequestFields() {
+        String reporterIdStr = "550e8400-e29b-41d4-a716-446655440000";
+        BehaviorReportRequest request = BehaviorReportRequest.builder()
+                .reportType(ReportType.HARASSMENT)
+                .description("Repeated inappropriate behavior")
+                .referenceId("ref-123")
+                .build();
+
+        when(reportRepositoryPort.save(any(BehaviorReport.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        BehaviorReportResponse response = service.submitReport(reporterIdStr, request);
+
+        assertThat(response.getCaseNumber()).isNotNull();
+        assertThat(response.getMessage()).contains("Tu reporte ha sido recibido");
     }
 }

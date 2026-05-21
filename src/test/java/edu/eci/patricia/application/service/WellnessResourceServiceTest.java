@@ -24,9 +24,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link WellnessResourceService}.
- */
 @ExtendWith(MockitoExtension.class)
 class WellnessResourceServiceTest {
 
@@ -36,31 +33,37 @@ class WellnessResourceServiceTest {
     @InjectMocks
     private WellnessResourceService service;
 
-    private WellnessResource sampleResource;
-    private WellnessResource mentalHealthResource;
+    private WellnessResource emotionalResource;
+    private WellnessResource sportsResource;
     private UUID resourceId;
 
     @BeforeEach
     void setUp() {
         resourceId = UUID.randomUUID();
-        sampleResource = WellnessResource.builder()
+        emotionalResource = WellnessResource.builder()
                 .id(resourceId)
                 .name("Counseling Center")
                 .description("Individual and group therapy")
-                .category(WellnessCategory.MENTAL_HEALTH)
+                .category(WellnessCategory.EMOTIONAL_SUPPORT)
                 .location("Building A, Room 101")
                 .available(true)
                 .appointmentEmail("psicologia@eci.edu.co")
                 .psychologistName("Dra. María García")
                 .build();
 
-        mentalHealthResource = sampleResource;
+        sportsResource = WellnessResource.builder()
+                .id(UUID.randomUUID())
+                .name("Sports Center")
+                .category(WellnessCategory.SPORTS)
+                .location("Sports Complex")
+                .available(true)
+                .build();
     }
 
     @Test
     @DisplayName("getAllResources with null category returns all resources")
     void getAllResources_nullCategory_returnsAll() {
-        when(repositoryPort.findAll()).thenReturn(List.of(sampleResource));
+        when(repositoryPort.findAll()).thenReturn(List.of(emotionalResource));
 
         List<WellnessResource> result = service.getAllResources(null);
 
@@ -72,25 +75,47 @@ class WellnessResourceServiceTest {
     @Test
     @DisplayName("getAllResources with specific category returns filtered resources")
     void getAllResources_withCategory_returnsFilteredList() {
-        when(repositoryPort.findByCategory(WellnessCategory.MENTAL_HEALTH)).thenReturn(List.of(sampleResource));
+        when(repositoryPort.findByCategory(WellnessCategory.EMOTIONAL_SUPPORT)).thenReturn(List.of(emotionalResource));
 
-        List<WellnessResource> result = service.getAllResources(WellnessCategory.MENTAL_HEALTH);
+        List<WellnessResource> result = service.getAllResources(WellnessCategory.EMOTIONAL_SUPPORT);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCategory()).isEqualTo(WellnessCategory.MENTAL_HEALTH);
-        verify(repositoryPort).findByCategory(WellnessCategory.MENTAL_HEALTH);
+        assertThat(result.get(0).getCategory()).isEqualTo(WellnessCategory.EMOTIONAL_SUPPORT);
+        verify(repositoryPort).findByCategory(WellnessCategory.EMOTIONAL_SUPPORT);
+    }
+
+    @Test
+    @DisplayName("getResourceById returns resource when found")
+    void getResourceById_found_returnsResource() {
+        when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(emotionalResource));
+
+        Optional<WellnessResource> result = service.getResourceById(resourceId);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().getId()).isEqualTo(resourceId);
+    }
+
+    @Test
+    @DisplayName("getResourceById returns empty Optional when not found")
+    void getResourceById_notFound_returnsEmpty() {
+        UUID unknownId = UUID.randomUUID();
+        when(repositoryPort.findById(unknownId)).thenReturn(Optional.empty());
+
+        Optional<WellnessResource> result = service.getResourceById(unknownId);
+
+        assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("createResource persists and returns the resource")
     void createResource_validResource_returnsSaved() {
-        when(repositoryPort.save(any(WellnessResource.class))).thenReturn(sampleResource);
+        when(repositoryPort.save(any(WellnessResource.class))).thenReturn(emotionalResource);
 
-        WellnessResource created = service.createResource(sampleResource);
+        WellnessResource created = service.createResource(emotionalResource);
 
         assertThat(created).isNotNull();
         assertThat(created.getId()).isEqualTo(resourceId);
-        verify(repositoryPort).save(sampleResource);
+        verify(repositoryPort).save(emotionalResource);
     }
 
     @Test
@@ -99,7 +124,7 @@ class WellnessResourceServiceTest {
         UUID nonExistentId = UUID.randomUUID();
         when(repositoryPort.existsById(nonExistentId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.updateResource(nonExistentId, sampleResource))
+        assertThatThrownBy(() -> service.updateResource(nonExistentId, emotionalResource))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining(nonExistentId.toString());
     }
@@ -111,7 +136,7 @@ class WellnessResourceServiceTest {
                 .id(resourceId)
                 .name("Updated Counseling Center")
                 .description("Updated description")
-                .category(WellnessCategory.MENTAL_HEALTH)
+                .category(WellnessCategory.EMOTIONAL_SUPPORT)
                 .location("Building B")
                 .available(true)
                 .build();
@@ -136,20 +161,19 @@ class WellnessResourceServiceTest {
     }
 
     @Test
-    @DisplayName("getResourceById returns empty Optional when resource not found")
-    void getResourceById_nonExistentId_returnsEmptyOptional() {
-        UUID nonExistentId = UUID.randomUUID();
-        when(repositoryPort.findById(nonExistentId)).thenReturn(Optional.empty());
+    @DisplayName("deleteResource succeeds when resource exists")
+    void deleteResource_existingId_succeeds() {
+        when(repositoryPort.existsById(resourceId)).thenReturn(true);
 
-        Optional<WellnessResource> result = service.getResourceById(nonExistentId);
+        service.deleteResource(resourceId);
 
-        assertThat(result).isEmpty();
+        verify(repositoryPort).deleteById(resourceId);
     }
 
     @Test
-    @DisplayName("generateAppointmentMailto returns mailto for MENTAL_HEALTH resource")
-    void generateAppointmentMailto_mentalHealthResource_returnsMailto() {
-        when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(mentalHealthResource));
+    @DisplayName("generateAppointmentMailto returns mailto for EMOTIONAL_SUPPORT resource")
+    void generateAppointmentMailto_emotionalSupportResource_returnsMailto() {
+        when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(emotionalResource));
 
         AppointmentMailtoResponse response = service.generateAppointmentMailto(resourceId, "student-uuid-123");
 
@@ -161,21 +185,13 @@ class WellnessResourceServiceTest {
     }
 
     @Test
-    @DisplayName("generateAppointmentMailto throws WellnessException for non-MENTAL_HEALTH resource")
-    void generateAppointmentMailto_nonMentalHealthResource_throwsWellnessException() {
-        WellnessResource sportsResource = WellnessResource.builder()
-                .id(resourceId)
-                .name("Sports Center")
-                .category(WellnessCategory.SPORTS)
-                .location("Sports Complex")
-                .available(true)
-                .build();
-
+    @DisplayName("generateAppointmentMailto throws WellnessException for non-EMOTIONAL_SUPPORT resource")
+    void generateAppointmentMailto_nonEmotionalSupport_throwsWellnessException() {
         when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(sportsResource));
 
         assertThatThrownBy(() -> service.generateAppointmentMailto(resourceId, "student-uuid"))
                 .isInstanceOf(WellnessException.class)
-                .hasMessageContaining("MENTAL_HEALTH");
+                .hasMessageContaining("EMOTIONAL_SUPPORT");
     }
 
     @Test
@@ -194,7 +210,7 @@ class WellnessResourceServiceTest {
         WellnessResource resourceNoEmail = WellnessResource.builder()
                 .id(resourceId)
                 .name("Psych Office")
-                .category(WellnessCategory.MENTAL_HEALTH)
+                .category(WellnessCategory.EMOTIONAL_SUPPORT)
                 .location("Building C")
                 .contactInfo("bienestar@eci.edu.co")
                 .available(true)
@@ -205,5 +221,42 @@ class WellnessResourceServiceTest {
         AppointmentMailtoResponse response = service.generateAppointmentMailto(resourceId, "student-uuid");
 
         assertThat(response.getAppointmentEmailTo()).isEqualTo("bienestar@eci.edu.co");
+    }
+
+    @Test
+    @DisplayName("generateAppointmentMailto uses default email when both appointmentEmail and contactInfo are null")
+    void generateAppointmentMailto_noEmail_noContactInfo_usesDefault() {
+        WellnessResource resourceNoContact = WellnessResource.builder()
+                .id(resourceId)
+                .name("Psych Office")
+                .category(WellnessCategory.EMOTIONAL_SUPPORT)
+                .location("Building C")
+                .available(true)
+                .build();
+
+        when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(resourceNoContact));
+
+        AppointmentMailtoResponse response = service.generateAppointmentMailto(resourceId, "student-uuid");
+
+        assertThat(response.getAppointmentEmailTo()).isEqualTo("bienestar@eci.edu.co");
+    }
+
+    @Test
+    @DisplayName("generateAppointmentMailto uses default psychologist name when psychologistName is null")
+    void generateAppointmentMailto_noPsychologistName_usesDefault() {
+        WellnessResource resourceNoName = WellnessResource.builder()
+                .id(resourceId)
+                .name("Psych Office")
+                .category(WellnessCategory.EMOTIONAL_SUPPORT)
+                .location("Building C")
+                .appointmentEmail("psicologia@eci.edu.co")
+                .available(true)
+                .build();
+
+        when(repositoryPort.findById(resourceId)).thenReturn(Optional.of(resourceNoName));
+
+        AppointmentMailtoResponse response = service.generateAppointmentMailto(resourceId, "student-uuid");
+
+        assertThat(response.getAppointmentEmailBody()).contains("Profesional de Bienestar");
     }
 }

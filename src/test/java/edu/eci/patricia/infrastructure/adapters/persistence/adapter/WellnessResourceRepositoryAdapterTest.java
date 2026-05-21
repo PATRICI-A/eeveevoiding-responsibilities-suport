@@ -3,8 +3,7 @@ package edu.eci.patricia.infrastructure.adapters.persistence.adapter;
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.domain.model.WellnessResource;
 import edu.eci.patricia.infrastructure.adapters.persistence.entity.WellnessResourceEntity;
-import edu.eci.patricia.infrastructure.adapters.persistence.mapper.WellnessResourceMapper;
-import edu.eci.patricia.infrastructure.adapters.persistence.repository.WellnessResourceJpaRepository;
+import edu.eci.patricia.infrastructure.adapters.persistence.repository.JpaWellnessResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,40 +20,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * Unit tests for {@link WellnessResourceRepositoryAdapter}.
- */
 @ExtendWith(MockitoExtension.class)
 class WellnessResourceRepositoryAdapterTest {
 
     @Mock
-    private WellnessResourceJpaRepository jpaRepository;
-
-    @Mock
-    private WellnessResourceMapper mapper;
+    private JpaWellnessResourceRepository jpaRepository;
 
     @InjectMocks
     private WellnessResourceRepositoryAdapter adapter;
 
     private UUID resourceId;
-    private WellnessResource domainResource;
     private WellnessResourceEntity entityResource;
 
     @BeforeEach
     void setUp() {
         resourceId = UUID.randomUUID();
 
-        domainResource = WellnessResource.builder()
-                .id(resourceId)
-                .name("Sports Center")
-                .description("Daily fitness classes")
-                .category(WellnessCategory.SPORTS)
-                .location("Wellness Complex")
-                .available(true)
-                .build();
-
         entityResource = WellnessResourceEntity.builder()
-                .id(resourceId)
+                .id(resourceId.toString())
                 .name("Sports Center")
                 .description("Daily fitness classes")
                 .category(WellnessCategory.SPORTS)
@@ -64,87 +47,68 @@ class WellnessResourceRepositoryAdapterTest {
     }
 
     @Test
-    @DisplayName("findAll returns list of domain resources")
-    void findAll_returnsMappedDomainList() {
-        when(jpaRepository.findAll()).thenReturn(List.of(entityResource));
-        when(mapper.toDomain(entityResource)).thenReturn(domainResource);
+    @DisplayName("findAllActive returns list of domain resources")
+    void findAllActive_returnsMappedDomainList() {
+        when(jpaRepository.findByAvailableTrue()).thenReturn(List.of(entityResource));
 
-        List<WellnessResource> result = adapter.findAll();
+        List<WellnessResource> result = adapter.findAllActive();
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getName()).isEqualTo("Sports Center");
+        assertThat(result.get(0).getId()).isEqualTo(resourceId);
     }
 
     @Test
-    @DisplayName("findByCategory returns filtered domain resources")
-    void findByCategory_returnsFilteredList() {
-        when(jpaRepository.findByCategory(WellnessCategory.SPORTS))
-                .thenReturn(List.of(entityResource));
-        when(mapper.toDomain(entityResource)).thenReturn(domainResource);
+    @DisplayName("findAllActive returns empty list when none active")
+    void findAllActive_noActive_returnsEmpty() {
+        when(jpaRepository.findByAvailableTrue()).thenReturn(List.of());
 
-        List<WellnessResource> result = adapter.findByCategory(WellnessCategory.SPORTS);
+        List<WellnessResource> result = adapter.findAllActive();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("findActiveByCategory returns filtered domain resources")
+    void findActiveByCategory_returnsFilteredList() {
+        when(jpaRepository.findByAvailableTrueAndCategory(WellnessCategory.SPORTS))
+                .thenReturn(List.of(entityResource));
+
+        List<WellnessResource> result = adapter.findActiveByCategory(WellnessCategory.SPORTS);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getCategory()).isEqualTo(WellnessCategory.SPORTS);
     }
 
     @Test
-    @DisplayName("findById returns Optional with domain resource when found")
+    @DisplayName("findById returns Optional with domain resource when found and active")
     void findById_found_returnsOptional() {
-        when(jpaRepository.findById(resourceId)).thenReturn(Optional.of(entityResource));
-        when(mapper.toDomain(entityResource)).thenReturn(domainResource);
+        when(jpaRepository.findById(resourceId.toString())).thenReturn(Optional.of(entityResource));
 
-        Optional<WellnessResource> result = adapter.findById(resourceId);
+        Optional<WellnessResource> result = adapter.findById(resourceId.toString());
 
         assertThat(result).isPresent();
         assertThat(result.get().getId()).isEqualTo(resourceId);
     }
 
     @Test
-    @DisplayName("findById returns empty Optional when not found")
+    @DisplayName("findById returns empty when not found")
     void findById_notFound_returnsEmpty() {
-        when(jpaRepository.findById(resourceId)).thenReturn(Optional.empty());
+        when(jpaRepository.findById(resourceId.toString())).thenReturn(Optional.empty());
 
-        Optional<WellnessResource> result = adapter.findById(resourceId);
+        Optional<WellnessResource> result = adapter.findById(resourceId.toString());
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    @DisplayName("save persists entity and returns mapped domain")
-    void save_persistsAndReturnsDomain() {
-        when(mapper.toEntity(domainResource)).thenReturn(entityResource);
-        when(jpaRepository.save(entityResource)).thenReturn(entityResource);
-        when(mapper.toDomain(entityResource)).thenReturn(domainResource);
+    @DisplayName("findById filters out inactive resources")
+    void findById_inactive_returnsEmpty() {
+        entityResource.setAvailable(false);
+        when(jpaRepository.findById(resourceId.toString())).thenReturn(Optional.of(entityResource));
 
-        WellnessResource saved = adapter.save(domainResource);
+        Optional<WellnessResource> result = adapter.findById(resourceId.toString());
 
-        assertThat(saved).isNotNull();
-        assertThat(saved.getId()).isEqualTo(resourceId);
-        verify(jpaRepository).save(entityResource);
-    }
-
-    @Test
-    @DisplayName("deleteById delegates to JPA repository")
-    void deleteById_delegatesToJpaRepository() {
-        adapter.deleteById(resourceId);
-
-        verify(jpaRepository).deleteById(resourceId);
-    }
-
-    @Test
-    @DisplayName("existsById returns true when resource exists")
-    void existsById_exists_returnsTrue() {
-        when(jpaRepository.existsById(resourceId)).thenReturn(true);
-
-        assertThat(adapter.existsById(resourceId)).isTrue();
-    }
-
-    @Test
-    @DisplayName("existsById returns false when resource does not exist")
-    void existsById_notExists_returnsFalse() {
-        when(jpaRepository.existsById(resourceId)).thenReturn(false);
-
-        assertThat(adapter.existsById(resourceId)).isFalse();
+        assertThat(result).isEmpty();
     }
 }
