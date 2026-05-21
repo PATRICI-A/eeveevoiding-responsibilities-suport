@@ -7,33 +7,43 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 /**
- * Response DTO representing a single recommended wellness resource.
+ * A single recommended wellness resource returned to the student (PTR23 / PTR23.2).
+ * Includes the reason it was recommended when coming from the RECOMMENDATIONS filter.
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "A recommended wellness resource based on the student survey results")
+@Schema(description = "A wellness resource recommended based on the student's survey results")
 public class RecommendationResponse {
 
-    @Schema(description = "Unique identifier of the recommended resource")
-    private UUID id;
+    @Schema(description = "Unique identifier of the resource")
+    private String id;
 
-    @Schema(description = "Name of the recommended resource", example = "Psychological Counseling Center")
+    @Schema(description = "Name of the resource", example = "Servicio de Psicología")
     private String name;
 
-    @Schema(description = "Brief description of the resource", example = "Individual therapy sessions available weekdays")
+    @Schema(description = "Brief description of the resource")
     private String description;
 
-    @Schema(description = "Wellness category of the resource", example = "MENTAL_HEALTH")
+    @Schema(description = "Wellness category", example = "EMOTIONAL_SUPPORT")
     private WellnessCategory category;
 
-    @Schema(description = "Location of the resource", example = "Building A, Room 201")
+    @Schema(description = "Location on campus", example = "Bloque A, Piso 2")
     private String location;
 
-    @Schema(description = "Contact information", example = "counseling@university.edu")
+    @Schema(description = "Contact information")
     private String contactInfo;
+
+    @Schema(description = "Attendance schedule", example = "Lunes a viernes, 8:00 a.m. – 5:00 p.m.")
+    private String schedule;
+
+    /**
+     * Only populated when the resource comes from the RECOMMENDATIONS filter (PTR23.2 / RN-23.2.5).
+     */
+    @Schema(description = "Reason this resource was recommended",
+            example = "Recomendado por nivel alto de estrés académico.",
+            nullable = true)
+    private String recommendationReason;
 }

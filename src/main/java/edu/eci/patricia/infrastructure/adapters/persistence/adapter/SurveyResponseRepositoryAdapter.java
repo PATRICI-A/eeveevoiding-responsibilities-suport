@@ -1,37 +1,34 @@
 package edu.eci.patricia.infrastructure.adapters.persistence.adapter;
 
 import edu.eci.patricia.domain.model.SurveyResponse;
-import edu.eci.patricia.domain.ports.out.SurveyResponseRepositoryPort;
+import edu.eci.patricia.domain.ports.out.SurveyResponseRepository;
 import edu.eci.patricia.infrastructure.adapters.persistence.mapper.SurveyResponseMapper;
-import edu.eci.patricia.infrastructure.adapters.persistence.repository.SurveyResponseJpaRepository;
+import edu.eci.patricia.infrastructure.adapters.persistence.repository.JpaSurveyResponseRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 /**
- * Adapter implementing {@link SurveyResponseRepositoryPort} via Spring Data JPA.
+ * Adapter that bridges {@link SurveyResponseRepository} (domain port) with the
+ * JPA repository (infrastructure layer).
  */
 @Component
 @RequiredArgsConstructor
-public class SurveyResponseRepositoryAdapter implements SurveyResponseRepositoryPort {
+public class SurveyResponseRepositoryAdapter implements SurveyResponseRepository {
 
-    private final SurveyResponseJpaRepository jpaRepository;
+    private final JpaSurveyResponseRepository jpaRepository;
     private final SurveyResponseMapper mapper;
 
-    /** {@inheritDoc} */
     @Override
-    public SurveyResponse save(SurveyResponse surveyResponse) {
-        return mapper.toDomain(jpaRepository.save(mapper.toEntity(surveyResponse)));
+    public void save(SurveyResponse survey) {
+        jpaRepository.save(mapper.toEntity(survey));
     }
 
-    /** {@inheritDoc} */
     @Override
-    public List<SurveyResponse> findByUserId(UUID userId) {
-        return jpaRepository.findByUserIdOrderBySubmittedAtDesc(userId).stream()
-                .map(mapper::toDomain)
-                .collect(Collectors.toList());
+    public Optional<SurveyResponse> findLatestByStudentId(String studentId) {
+        return jpaRepository
+                .findTopByStudentIdOrderBySubmittedAtDesc(studentId)
+                .map(mapper::toDomain);
     }
 }

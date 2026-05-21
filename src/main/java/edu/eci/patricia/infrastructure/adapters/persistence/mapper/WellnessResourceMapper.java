@@ -4,6 +4,7 @@ import edu.eci.patricia.domain.model.WellnessResource;
 import edu.eci.patricia.infrastructure.adapters.persistence.entity.WellnessResourceEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
 /**
  * Mapper that converts between {@link WellnessResource} domain models
  * and {@link WellnessResourceEntity} JPA entities.
@@ -16,7 +17,7 @@ public class WellnessResourceMapper {
             return null;
         }
         return WellnessResource.builder()
-                .id(entity.getId())
+                .id(UUID.fromString(entity.getId()))
                 .name(entity.getName())
                 .description(entity.getDescription())
                 .category(entity.getCategory())
@@ -26,7 +27,6 @@ public class WellnessResourceMapper {
                 .available(entity.isAvailable())
                 .appointmentEmail(entity.getAppointmentEmail())
                 .psychologistName(entity.getPsychologistName())
-                .createdAt(entity.getCreatedAt())
                 .build();
     }
 
@@ -35,7 +35,7 @@ public class WellnessResourceMapper {
             return null;
         }
         return WellnessResourceEntity.builder()
-                .id(domain.getId())
+                .id(domain.getId() != null ? domain.getId().toString() : UUID.randomUUID().toString())
                 .name(domain.getName())
                 .description(domain.getDescription())
                 .category(domain.getCategory())
@@ -45,7 +45,6 @@ public class WellnessResourceMapper {
                 .available(domain.isAvailable())
                 .appointmentEmail(domain.getAppointmentEmail())
                 .psychologistName(domain.getPsychologistName())
-                .createdAt(domain.getCreatedAt())
                 .build();
     }
 }

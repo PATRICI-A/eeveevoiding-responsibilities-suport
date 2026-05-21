@@ -32,9 +32,9 @@ public interface GetWellnessResourcesUseCase {
 
     /**
      * Generates a pre-built mailto for requesting a psychological appointment (RF23 HU-23-03).
-     * Only valid for resources with category {@code MENTAL_HEALTH}.
+     * Only valid for resources with category {@code EMOTIONAL_SUPPORT}.
      *
-     * @param resourceId the UUID of the MENTAL_HEALTH resource
+     * @param resourceId the UUID of the EMOTIONAL_SUPPORT resource
      * @param studentId  the student's identifier extracted from the JWT
      * @return the mailto components ready for the client to open in an email app
      */

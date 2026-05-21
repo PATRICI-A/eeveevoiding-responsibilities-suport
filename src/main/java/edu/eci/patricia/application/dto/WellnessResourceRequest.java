@@ -30,8 +30,8 @@ public class WellnessResourceRequest {
 
     @NotNull(message = "Category is required")
     @Schema(description = "Wellness category this resource belongs to",
-            example = "MENTAL_HEALTH",
-            allowableValues = {"MENTAL_HEALTH", "SPORTS", "CULTURE", "ACADEMIC_SUPPORT"})
+            example = "EMOTIONAL_SUPPORT",
+            allowableValues = {"EMOTIONAL_SUPPORT", "SPORTS", "CULTURE", "HEALTH"})
     private WellnessCategory category;
 
     @NotBlank(message = "Location is required")
@@ -47,11 +47,11 @@ public class WellnessResourceRequest {
     @Schema(description = "Whether the resource is currently available", example = "true")
     private boolean available;
 
-    @Schema(description = "Psychologist email address — only for MENTAL_HEALTH resources",
+    @Schema(description = "Psychologist email address — only for EMOTIONAL_SUPPORT resources",
             example = "psicologia@eci.edu.co")
     private String appointmentEmail;
 
-    @Schema(description = "Psychologist name — only for MENTAL_HEALTH resources",
+    @Schema(description = "Psychologist name — only for EMOTIONAL_SUPPORT resources",
             example = "Dra. María García")
     private String psychologistName;
 }

@@ -43,16 +43,16 @@ public class WellnessResourceService implements GetWellnessResourcesUseCase, Man
      * {@inheritDoc}
      *
      * @throws ResourceNotFoundException if no resource exists with the given id
-     * @throws WellnessException         if the resource category is not MENTAL_HEALTH
+     * @throws WellnessException         if the resource category is not EMOTIONAL_SUPPORT
      */
     @Override
     public AppointmentMailtoResponse generateAppointmentMailto(UUID resourceId, String studentId) {
         WellnessResource resource = repositoryPort.findById(resourceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Wellness resource not found with id: " + resourceId));
 
-        if (resource.getCategory() != WellnessCategory.MENTAL_HEALTH) {
+        if (resource.getCategory() != WellnessCategory.EMOTIONAL_SUPPORT) {
             throw new WellnessException(
-                    "Appointment mailto is only available for MENTAL_HEALTH resources");
+                    "Appointment mailto is only available for EMOTIONAL_SUPPORT resources");
         }
 
         String psychologistName = resource.getPsychologistName() != null

@@ -1,19 +1,20 @@
 package edu.eci.patricia.domain.model;
 
 /**
- * Enumeration of wellness resource categories available in the campus wellness system (RF23).
+ * Wellness resource categories (PTR23).
+ * Aligns with the requirements document values.
  */
 public enum WellnessCategory {
 
-    /** Psychological counseling and mental health services. */
-    MENTAL_HEALTH,
+    /** Psychological counselling and emotional-support services. */
+    EMOTIONAL_SUPPORT,
 
-    /** Sports, physical activity, and body wellness services. */
+    /** Medical, nutritional and physical health services. */
+    HEALTH,
+
+    /** Sports and physical-activity services. */
     SPORTS,
 
-    /** Cultural, artistic, and social engagement services. */
-    CULTURE,
-
-    /** Academic support, tutoring, and study resources. */
-    ACADEMIC_SUPPORT
+    /** Cultural, artistic and social engagement services. */
+    CULTURE
 }

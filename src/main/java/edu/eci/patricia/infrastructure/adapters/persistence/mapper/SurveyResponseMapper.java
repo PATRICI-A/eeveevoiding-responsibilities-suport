@@ -5,56 +5,27 @@ import edu.eci.patricia.infrastructure.adapters.persistence.entity.SurveyRespons
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper that converts between {@link SurveyResponse} domain models
- * and {@link SurveyResponseEntity} JPA entities.
+ * Mapper between {@link SurveyResponse} domain model and {@link SurveyResponseEntity} JPA entity.
  */
 @Component
 public class SurveyResponseMapper {
 
-    /**
-     * Converts a JPA entity to a domain model.
-     *
-     * @param entity the JPA entity to convert
-     * @return the corresponding domain model, or null if entity is null
-     */
     public SurveyResponse toDomain(SurveyResponseEntity entity) {
-        if (entity == null) {
-            return null;
-        }
+        if (entity == null) return null;
         return SurveyResponse.builder()
                 .id(entity.getId())
-                .userId(entity.getUserId())
-                .moodScore(entity.getMoodScore())
-                .stressScore(entity.getStressScore())
-                .sleepScore(entity.getSleepScore())
-                .socialScore(entity.getSocialScore())
-                .academicScore(entity.getAcademicScore())
-                .averageScore(entity.getAverageScore())
-                .wellbeingLevel(entity.getWellbeingLevel())
+                .studentId(entity.getStudentId())
+                .answers(entity.getAnswers())
                 .submittedAt(entity.getSubmittedAt())
                 .build();
     }
 
-    /**
-     * Converts a domain model to a JPA entity.
-     *
-     * @param domain the domain model to convert
-     * @return the corresponding JPA entity, or null if domain is null
-     */
     public SurveyResponseEntity toEntity(SurveyResponse domain) {
-        if (domain == null) {
-            return null;
-        }
+        if (domain == null) return null;
         return SurveyResponseEntity.builder()
                 .id(domain.getId())
-                .userId(domain.getUserId())
-                .moodScore(domain.getMoodScore())
-                .stressScore(domain.getStressScore())
-                .sleepScore(domain.getSleepScore())
-                .socialScore(domain.getSocialScore())
-                .academicScore(domain.getAcademicScore())
-                .averageScore(domain.getAverageScore())
-                .wellbeingLevel(domain.getWellbeingLevel())
+                .studentId(domain.getStudentId())
+                .answers(domain.getAnswers())
                 .submittedAt(domain.getSubmittedAt())
                 .build();
     }

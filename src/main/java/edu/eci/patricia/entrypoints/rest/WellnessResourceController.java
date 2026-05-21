@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 /**
  * REST controller exposing wellness resource endpoints (RF23).
- * Supports listing, retrieving, CRUD, and appointment mailto generation for MENTAL_HEALTH resources.
+ * Supports listing, retrieving, CRUD, and appointment mailto generation for EMOTIONAL_SUPPORT resources.
  */
 @RestController
 @RequestMapping("/api/v1/wellness/resources")
@@ -51,7 +51,7 @@ public class WellnessResourceController {
     /**
      * Lists all wellness resources, with an optional category filter (RF23 HU-23-01 / HU-23-02).
      *
-     * @param category optional category filter (MENTAL_HEALTH, SPORTS, CULTURE, ACADEMIC_SUPPORT)
+     * @param category optional category filter (EMOTIONAL_SUPPORT, SPORTS, CULTURE, HEALTH)
      * @return list of wellness resource responses
      */
     @GetMapping
@@ -62,7 +62,7 @@ public class WellnessResourceController {
         @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT")
     })
     public ResponseEntity<List<WellnessResourceResponse>> getAllResources(
-            @Parameter(description = "Optional category filter", example = "MENTAL_HEALTH")
+            @Parameter(description = "Optional category filter", example = "EMOTIONAL_SUPPORT")
             @RequestParam(required = false) WellnessCategory category) {
 
         List<WellnessResourceResponse> resources = getResourcesUseCase.getAllResources(category)
@@ -95,25 +95,25 @@ public class WellnessResourceController {
 
     /**
      * Generates a pre-built mailto link for requesting a psychological appointment (RF23 HU-23-03).
-     * Only available for resources with category MENTAL_HEALTH. Returns HTTP 400 otherwise.
+     * Only available for resources with category EMOTIONAL_SUPPORT. Returns HTTP 400 otherwise.
      *
-     * @param id             the UUID of the MENTAL_HEALTH wellness resource
+     * @param id             the UUID of the EMOTIONAL_SUPPORT wellness resource
      * @param authentication the Spring Security authentication (student ID extracted from JWT)
      * @return the mailto components ready for the client to open in an email app
      */
     @GetMapping("/{id}/cita-mailto")
-    @Operation(summary = "Generate appointment mailto for a MENTAL_HEALTH resource",
+    @Operation(summary = "Generate appointment mailto for a EMOTIONAL_SUPPORT resource",
                description = "Returns pre-built email components (to, subject, body) for requesting a " +
-                             "psychological appointment. Only available for MENTAL_HEALTH resources. " +
+                             "psychological appointment. Only available for EMOTIONAL_SUPPORT resources. " +
                              "The system does NOT send the email — the student does from their email app.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Mailto components generated"),
-        @ApiResponse(responseCode = "400", description = "Resource is not MENTAL_HEALTH category"),
+        @ApiResponse(responseCode = "400", description = "Resource is not EMOTIONAL_SUPPORT category"),
         @ApiResponse(responseCode = "404", description = "Resource not found"),
         @ApiResponse(responseCode = "401", description = "Unauthorized")
     })
     public ResponseEntity<AppointmentMailtoResponse> getAppointmentMailto(
-            @Parameter(description = "UUID of the MENTAL_HEALTH wellness resource") @PathVariable UUID id,
+            @Parameter(description = "UUID of the EMOTIONAL_SUPPORT wellness resource") @PathVariable UUID id,
             Authentication authentication) {
 
         String studentId = (String) authentication.getPrincipal();
@@ -199,7 +199,6 @@ public class WellnessResourceController {
                 .available(request.isAvailable())
                 .appointmentEmail(request.getAppointmentEmail())
                 .psychologistName(request.getPsychologistName())
-                .createdAt(LocalDateTime.now())
                 .build();
     }
 
@@ -215,7 +214,6 @@ public class WellnessResourceController {
                 .available(resource.isAvailable())
                 .appointmentEmail(resource.getAppointmentEmail())
                 .psychologistName(resource.getPsychologistName())
-                .createdAt(resource.getCreatedAt())
                 .build();
     }
 }

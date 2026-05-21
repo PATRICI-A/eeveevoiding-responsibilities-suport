@@ -5,22 +5,15 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
- * JPA entity mapping to the {@code wellness_resources} table (RF23).
- * For MENTAL_HEALTH resources, appointmentEmail and psychologistName are populated.
+ * JPA entity for the wellness_resources table (PTR23).
  */
 @Entity
 @Table(name = "wellness_resources")
@@ -31,9 +24,8 @@ import java.util.UUID;
 public class WellnessResourceEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @Column(nullable = false, updatable = false)
+    private String id;
 
     @Column(nullable = false)
     private String name;
@@ -49,21 +41,14 @@ public class WellnessResourceEntity {
     private String location;
 
     private String contactInfo;
-
     private String schedule;
 
     @Column(nullable = false)
     private boolean available;
 
-    /** Psychologist's email address — only for MENTAL_HEALTH resources. */
     @Column(name = "appointment_email")
     private String appointmentEmail;
 
-    /** Psychologist's name — only for MENTAL_HEALTH resources. */
     @Column(name = "psychologist_name")
     private String psychologistName;
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 }

@@ -1,12 +1,7 @@
 package edu.eci.patricia.infrastructure.adapters.persistence.entity;
 
-import edu.eci.patricia.domain.model.WellbeingLevel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -14,13 +9,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Map;
 
 /**
- * JPA entity mapping to the {@code survey_responses} table.
- * Stores a student's completed wellness survey with computed scores.
+ * JPA entity for the survey_responses table (PTR23.1).
+ * Stores raw P01–P10 answers as a JSONB column.
  */
 @Entity
 @Table(name = "survey_responses")
@@ -30,46 +27,20 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SurveyResponseEntity {
 
-    /** Primary key generated as a UUID. */
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id", updatable = false, nullable = false)
-    private UUID id;
+    @Column(nullable = false, updatable = false)
+    private String id;
 
-    /** Identifier of the student who submitted the survey. */
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    @Column(name = "student_id", nullable = false)
+    private String studentId;
 
-    /** Self-reported mood score (1-5). */
-    @Column(name = "mood_score", nullable = false)
-    private int moodScore;
+    /**
+     * Raw answers stored as JSON: {"P01":"Bien", "P02":"3", ...}
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "answers", nullable = false, columnDefinition = "jsonb")
+    private Map<String, String> answers;
 
-    /** Self-reported stress score (1-5). */
-    @Column(name = "stress_score", nullable = false)
-    private int stressScore;
-
-    /** Self-reported sleep quality score (1-5). */
-    @Column(name = "sleep_score", nullable = false)
-    private int sleepScore;
-
-    /** Self-reported social connection score (1-5). */
-    @Column(name = "social_score", nullable = false)
-    private int socialScore;
-
-    /** Self-reported academic performance score (1-5). */
-    @Column(name = "academic_score", nullable = false)
-    private int academicScore;
-
-    /** Computed average of all five scores. */
-    @Column(name = "average_score", nullable = false)
-    private double averageScore;
-
-    /** Derived wellbeing level stored as a string. */
-    @Enumerated(EnumType.STRING)
-    @Column(name = "wellbeing_level", nullable = false)
-    private WellbeingLevel wellbeingLevel;
-
-    /** Timestamp automatically set when the record is inserted. */
     @CreationTimestamp
     @Column(name = "submitted_at", updatable = false)
     private LocalDateTime submittedAt;

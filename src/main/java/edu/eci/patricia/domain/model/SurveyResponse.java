@@ -6,11 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.Map;
 
 /**
- * Domain model representing a completed wellness survey submitted by a student.
- * Each dimension is scored 1-5 and an average wellbeing level is computed.
+ * Domain model representing a completed wellness survey submitted by a student (PTR23.1).
+ * Stores the raw answers to questions P01–P10.
+ * All ten questions are mandatory.
  */
 @Data
 @Builder
@@ -18,33 +19,17 @@ import java.util.UUID;
 @AllArgsConstructor
 public class SurveyResponse {
 
-    /** Unique identifier for this survey submission. */
-    private UUID id;
+    /** UUID generated automatically at submission time. */
+    private String id;
 
-    /** Identifier of the student who submitted the survey. */
-    private UUID userId;
+    /** ID of the student who submitted the survey (extracted from JWT). */
+    private String studentId;
 
-    /** Self-reported mood score (1 = very bad, 5 = excellent). */
-    private int moodScore;
+    /**
+     * Map of questionId → selected answer.
+     * Keys: P01–P10. All 10 must be present.
+     */
+    private Map<String, String> answers;
 
-    /** Self-reported stress score (1 = extremely stressed, 5 = relaxed). */
-    private int stressScore;
-
-    /** Self-reported sleep quality score (1 = very poor, 5 = excellent). */
-    private int sleepScore;
-
-    /** Self-reported social connection score (1 = isolated, 5 = very connected). */
-    private int socialScore;
-
-    /** Self-reported academic performance score (1 = struggling, 5 = thriving). */
-    private int academicScore;
-
-    /** Computed average of all five dimension scores. */
-    private double averageScore;
-
-    /** Derived wellbeing level based on the average score. */
-    private WellbeingLevel wellbeingLevel;
-
-    /** Timestamp when the survey was submitted. */
     private LocalDateTime submittedAt;
 }

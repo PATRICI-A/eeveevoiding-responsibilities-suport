@@ -12,7 +12,7 @@ import java.util.UUID;
 
 /**
  * Response DTO representing a wellness resource returned to the client (RF23).
- * For MENTAL_HEALTH resources, appointmentEmail and psychologistName are populated.
+ * For EMOTIONAL_SUPPORT resources, appointmentEmail and psychologistName are populated.
  */
 @Data
 @Builder
@@ -30,7 +30,7 @@ public class WellnessResourceResponse {
     @Schema(description = "Detailed description of services", example = "Individual therapy sessions")
     private String description;
 
-    @Schema(description = "Wellness category", example = "MENTAL_HEALTH")
+    @Schema(description = "Wellness category", example = "EMOTIONAL_SUPPORT")
     private WellnessCategory category;
 
     @Schema(description = "Physical or virtual location", example = "Building A, Room 201")
@@ -45,10 +45,10 @@ public class WellnessResourceResponse {
     @Schema(description = "Whether the resource is currently available", example = "true")
     private boolean available;
 
-    @Schema(description = "Psychologist email — only for MENTAL_HEALTH resources", example = "psicologia@eci.edu.co")
+    @Schema(description = "Psychologist email — only for EMOTIONAL_SUPPORT resources", example = "psicologia@eci.edu.co")
     private String appointmentEmail;
 
-    @Schema(description = "Psychologist name — only for MENTAL_HEALTH resources", example = "Dra. María García")
+    @Schema(description = "Psychologist name — only for EMOTIONAL_SUPPORT resources", example = "Dra. María García")
     private String psychologistName;
 
     @Schema(description = "Timestamp when the resource was created")
