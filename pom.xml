@@ -215,6 +215,7 @@
                         <exclude>edu/eci/patricia/infrastructure/config/**</exclude>
                         <exclude>edu/eci/patricia/domain/exception/**</exclude>
                         <exclude>edu/eci/patricia/**/*Application.class</exclude>
+                        <exclude>edu/eci/patricia/config/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
