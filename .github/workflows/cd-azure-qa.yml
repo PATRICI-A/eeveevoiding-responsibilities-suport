@@ -77,16 +77,20 @@ jobs:
 
       - name: Health check QA
         run: |
-          sleep 30
+          echo "Waiting 60s for container to stabilize..."
+          sleep 60
           QA_URL=$(az containerapp show \
             --name patricia-suport-service-qa \
             --resource-group ${{ env.RESOURCE_GROUP }} \
             --query "properties.configuration.ingress.fqdn" -o tsv)
           echo "QA URL: https://$QA_URL"
-          for i in {1..10}; do
+          for i in {1..15}; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://$QA_URL/actuator/health)
             echo "Attempt $i — HTTP $STATUS"
-            if [ "$STATUS" = "200" ]; then exit 0; fi
-            sleep 15
+            if [ "$STATUS" = "200" ]; then 
+              echo "Health check passed!"
+              exit 0
+            fi
+            sleep 20
           done
-          echo "Health check failed" && exit 1
+          echo "Health check failed after multiple attempts" && exit 1
