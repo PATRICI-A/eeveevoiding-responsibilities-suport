@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Tag(name = "Behavior Reports", description = "Endpoints for submitting and tracking inappropriate behavior reports (RF24)")
 @SecurityRequirement(name = "bearerAuth")
-public class BehaviorReportController {
+public class    BehaviorReportController {
 
     private final SubmitBehaviorReportUseCase submitBehaviorReportUseCase;
 

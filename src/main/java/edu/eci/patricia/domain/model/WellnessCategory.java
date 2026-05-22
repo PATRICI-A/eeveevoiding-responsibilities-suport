@@ -6,6 +6,9 @@ package edu.eci.patricia.domain.model;
  */
 public enum WellnessCategory {
 
+    /** All categories (used for filtering). */
+    ALL,
+
     /** Psychological counselling and emotional-support services. */
     EMOTIONAL_SUPPORT,
 
@@ -16,5 +19,8 @@ public enum WellnessCategory {
     SPORTS,
 
     /** Cultural, artistic and social engagement services. */
-    CULTURE
+    CULTURE,
+
+    /** Personalized recommendations based on student survey. */
+    RECOMMENDATIONS
 }

@@ -1,11 +1,13 @@
 package edu.eci.patricia.entrypoints.rest;
 
 import edu.eci.patricia.application.dto.AppointmentMailtoResponse;
+import edu.eci.patricia.application.dto.RecommendationResponse;
 import edu.eci.patricia.application.dto.WellnessResourceRequest;
 import edu.eci.patricia.application.dto.WellnessResourceResponse;
 import edu.eci.patricia.domain.exception.ResourceNotFoundException;
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.domain.model.WellnessResource;
+import edu.eci.patricia.domain.ports.in.GetRecommendationsUseCase;
 import edu.eci.patricia.domain.ports.in.GetWellnessResourcesUseCase;
 import edu.eci.patricia.domain.ports.in.ManageWellnessResourceUseCase;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,29 +49,60 @@ public class WellnessResourceController {
 
     private final GetWellnessResourcesUseCase getResourcesUseCase;
     private final ManageWellnessResourceUseCase manageResourceUseCase;
+    private final GetRecommendationsUseCase recommendationsUseCase;
 
     /**
      * Lists all wellness resources, with an optional category filter (RF23 HU-23-01 / HU-23-02).
      *
-     * @param category optional category filter (EMOTIONAL_SUPPORT, SPORTS, CULTURE, HEALTH)
+     * @param category       optional category filter (EMOTIONAL_SUPPORT, SPORTS, CULTURE, HEALTH, RECOMMENDATIONS, ALL)
+     * @param authentication the Spring Security authentication (for recommendations)
      * @return list of wellness resource responses
      */
     @GetMapping
     @Operation(summary = "List all wellness resources",
-               description = "Returns all active wellness resources. Optionally filter by category.")
+               description = "Returns all active wellness resources. Optionally filter by category. " +
+                             "The RECOMMENDATIONS category returns personalized resources based on the student's survey.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Resources retrieved successfully"),
         @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT")
     })
     public ResponseEntity<List<WellnessResourceResponse>> getAllResources(
             @Parameter(description = "Optional category filter", example = "EMOTIONAL_SUPPORT")
-            @RequestParam(required = false) WellnessCategory category) {
+            @RequestParam(required = false) WellnessCategory category,
+            Authentication authentication) {
 
-        List<WellnessResourceResponse> resources = getResourcesUseCase.getAllResources(category)
+        // Handle RECOMMENDATIONS filter (PTR23.2)
+        if (category == WellnessCategory.RECOMMENDATIONS) {
+            String studentId = (String) authentication.getPrincipal();
+            List<WellnessResourceResponse> recommendations = recommendationsUseCase.getRecommendationsForStudent(studentId)
+                    .stream()
+                    .map(this::mapRecommendationToResponse)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(recommendations);
+        }
+
+        // Handle ALL or null filter (RN-23.3)
+        WellnessCategory filter = (category == WellnessCategory.ALL) ? null : category;
+
+        List<WellnessResourceResponse> resources = getResourcesUseCase.getAllResources(filter)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(resources);
+    }
+
+    private WellnessResourceResponse mapRecommendationToResponse(RecommendationResponse rec) {
+        return WellnessResourceResponse.builder()
+                .id(UUID.fromString(rec.getId()))
+                .name(rec.getName())
+                .description(rec.getDescription())
+                .category(rec.getCategory())
+                .location(rec.getLocation())
+                .contactInfo(rec.getContactInfo())
+                .schedule(rec.getSchedule())
+                .recommendationReason(rec.getRecommendationReason())
+                .available(true) // Recommendations only include active resources
+                .build();
     }
 
     /**
