@@ -84,10 +84,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             List<SimpleGrantedAuthority> authorities = Collections.emptyList();
             Object rolesClaim = claims.get("roles");
             if (rolesClaim instanceof List<?> roleList) {
+                // Formato lista: { "roles": ["USER", "ADMIN"] }
                 authorities = roleList.stream()
                         .filter(r -> r instanceof String)
-                        .map(r -> new SimpleGrantedAuthority("ROLE_" + r))
+                        .map(r -> new SimpleGrantedAuthority("ROLE_" + ((String) r).toUpperCase()))
                         .toList();
+            } else {
+                // Formato string singular: { "role": "USER" } — compatibilidad con otros microservicios
+                String role = claims.get("role", String.class);
+                if (role != null && !role.isBlank()) {
+                    authorities = List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+                }
             }
 
             UsernamePasswordAuthenticationToken authentication =

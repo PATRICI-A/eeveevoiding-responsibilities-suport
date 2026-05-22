@@ -1,4 +1,4 @@
-package edu.eci.patricia.infrastructure.config;
+package edu.eci.patricia.config;
 
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.infrastructure.adapters.persistence.entity.WellnessResourceEntity;
