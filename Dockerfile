@@ -20,11 +20,11 @@ COPY src ./src
 RUN ./mvnw package -DskipTests -B
 
 # --- Etapa 2: Runtime ---
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Usuario no-root por seguridad (nunca correr como root en prod)
-RUN addgroup -S spring && adduser -S spring -G spring
+# Usuario no-root por seguridad
+RUN groupadd -r spring && useradd -r -g spring spring
 USER spring
 
 # Copia solo el jar generado

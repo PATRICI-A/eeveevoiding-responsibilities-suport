@@ -73,7 +73,8 @@ jobs:
               SPRING_DATASOURCE_URL=${{ secrets.SPRING_DATASOURCE_URL }} \
               SPRING_DATASOURCE_USERNAME=${{ secrets.SPRING_DATASOURCE_USERNAME }} \
               SPRING_DATASOURCE_PASSWORD=${{ secrets.SPRING_DATASOURCE_PASSWORD }} \
-              JWT_SECRET=${{ secrets.JWT_SECRET }}
+              JWT_SECRET=${{ secrets.JWT_SECRET }} \
+              PORT=8080
 
       - name: Health check QA
         run: |
@@ -93,4 +94,11 @@ jobs:
             fi
             sleep 20
           done
-          echo "Health check failed after multiple attempts" && exit 1
+          
+          echo "Health check failed. Fetching logs..."
+          az containerapp logs show \
+            --name patricia-suport-service-qa \
+            --resource-group ${{ env.RESOURCE_GROUP }} \
+            --tail 100
+          
+          exit 1
