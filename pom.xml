@@ -145,6 +145,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
@@ -195,11 +200,11 @@
                 <version>${jacoco.version}</version>
                 <configuration>
                     <excludes>
-                        <exclude>edu/eci/patricia/DOWS_patricia/entrypoints/**/*Dto.class</exclude>
-                        <exclude>edu/eci/patricia/DOWS_patricia/entrypoints/**/*Mapper.class</exclude>
-                        <exclude>edu/eci/patricia/DOWS_patricia/infrastructure/config/**</exclude>
-                        <exclude>edu/eci/patricia/DOWS_patricia/domain/exception/**</exclude>
-                        <exclude>edu/eci/patricia/DOWS_patricia/**/*Application.class</exclude>
+                        <exclude>edu/eci/patricia/entrypoints/**/*Dto.class</exclude>
+                        <exclude>edu/eci/patricia/entrypoints/**/*Mapper.class</exclude>
+                        <exclude>edu/eci/patricia/infrastructure/config/**</exclude>
+                        <exclude>edu/eci/patricia/domain/exception/**</exclude>
+                        <exclude>edu/eci/patricia/**/*Application.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -229,7 +234,7 @@
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0</minimum>
+                                            <minimum>0.9</minimum>
                                         </limit>
                                     </limits>
                                 </rule>

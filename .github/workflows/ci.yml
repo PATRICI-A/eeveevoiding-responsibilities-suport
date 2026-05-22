@@ -2,9 +2,6 @@ name: CI – Suport Service
 
 on:
   pull_request:
-    branches:
-      - develop
-      - main
     types:
       - opened
       - synchronize
@@ -12,7 +9,7 @@ on:
 
   push:
     branches:
-      - develop
+      - '**'
 
 env:
   JAVA_VERSION: '21'
