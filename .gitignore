@@ -4,6 +4,7 @@
 *.iws
 *.ipr
 out/
+!src/**/out/
 
 # Archivos de compilación
 *.class
