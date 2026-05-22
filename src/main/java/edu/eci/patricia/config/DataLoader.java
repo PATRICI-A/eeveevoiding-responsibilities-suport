@@ -16,11 +16,11 @@ import java.util.UUID;
  * Loads initial wellness resources on startup (PTR23).
  * Uses updated WellnessCategory values: HEALTH, SPORTS, CULTURE, EMOTIONAL_SUPPORT.
  * Only runs if the table is empty to avoid duplicates on restart.
- * Not active in "test" profile.
+ * Active only in local/seed profiles to avoid touching shared QA/Prod databases on startup.
  */
 @Slf4j
 @Component
-@Profile("!test")
+@Profile({"local", "seed"})
 @RequiredArgsConstructor
 public class DataLoader implements CommandLineRunner {
 

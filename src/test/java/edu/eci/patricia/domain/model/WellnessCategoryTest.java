@@ -7,7 +7,7 @@ class WellnessCategoryTest {
 
     @Test
     void shouldHaveFourValues() {
-        assertThat(WellnessCategory.values()).hasSize(4);
+        assertThat(WellnessCategory.values()).hasSize(6);
     }
 
     @Test

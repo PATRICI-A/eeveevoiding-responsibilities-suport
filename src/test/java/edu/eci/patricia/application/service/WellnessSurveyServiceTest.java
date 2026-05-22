@@ -463,10 +463,12 @@ class WellnessSurveyServiceTest {
         when(resourceRepository.findByCategory(WellnessCategory.HEALTH)).thenReturn(List.of(healthResource));
         when(resourceRepository.findByCategory(WellnessCategory.SPORTS)).thenReturn(List.of(sportsResource));
         when(resourceRepository.findByCategory(WellnessCategory.CULTURE)).thenReturn(List.of(cultureResource));
+        when(resourceRepository.findByCategory(WellnessCategory.ALL)).thenReturn(List.of());
+        when(resourceRepository.findByCategory(WellnessCategory.RECOMMENDATIONS)).thenReturn(List.of());
 
         List<RecommendationResponse> result = service.getRecommendationsForStudent("new-student");
 
-        assertThat(result).hasSize(4);
+        assertThat(result).hasSize(4); // Only the 4 active categories have resources in this test
     }
 
     @Test

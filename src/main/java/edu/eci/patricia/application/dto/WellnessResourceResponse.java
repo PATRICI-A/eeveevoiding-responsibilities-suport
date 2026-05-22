@@ -51,6 +51,11 @@ public class WellnessResourceResponse {
     @Schema(description = "Psychologist name — only for EMOTIONAL_SUPPORT resources", example = "Dra. María García")
     private String psychologistName;
 
+    @Schema(description = "Reason this resource was recommended (only for RECOMMENDATIONS filter)",
+            example = "Recomendado por nivel alto de estrés académico.",
+            nullable = true)
+    private String recommendationReason;
+
     @Schema(description = "Timestamp when the resource was created")
     private LocalDateTime createdAt;
 }
