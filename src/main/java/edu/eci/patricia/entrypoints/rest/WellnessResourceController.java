@@ -1,11 +1,13 @@
 package edu.eci.patricia.entrypoints.rest;
 
 import edu.eci.patricia.application.dto.AppointmentMailtoResponse;
+import edu.eci.patricia.application.dto.RecommendationResponse;
 import edu.eci.patricia.application.dto.WellnessResourceRequest;
 import edu.eci.patricia.application.dto.WellnessResourceResponse;
 import edu.eci.patricia.domain.exception.ResourceNotFoundException;
 import edu.eci.patricia.domain.model.WellnessCategory;
 import edu.eci.patricia.domain.model.WellnessResource;
+import edu.eci.patricia.domain.ports.in.GetRecommendationsUseCase;
 import edu.eci.patricia.domain.ports.in.GetWellnessResourcesUseCase;
 import edu.eci.patricia.domain.ports.in.ManageWellnessResourceUseCase;
 import io.swagger.v3.oas.annotations.Operation;
