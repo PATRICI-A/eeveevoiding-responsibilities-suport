@@ -136,7 +136,7 @@ El flujo está completamente aislado del framework:
 
 ## 5. Diagrama de Datos
 
-![img.png](docs/diagrama datos.png)
+![img.png](docs/diagrama_datos.png)
 ### Tabla: `Wellness_resources`
 - **PK id**: `UUID`
 - **name**: `VARCHAR(255) [NOT NULL]`
@@ -161,7 +161,7 @@ El flujo está completamente aislado del framework:
 
 ## 6. Diagrama de Clases
 
-![img_1.png](docs/Diagrama clases.png)
+![img_1.png](docs/diagrama_clases.png)
 **Resumen del diseño de dominio:**
 
 - **`Wellnes`**: Entidad principal que administra el recurso. Atributos: `id: UUID`, `name: String`, `description: String`, `contactPhone: String`, `schedule: String`, `active: boolean`, `appointmentEmail: Strintg`, `psychologistName: String`. Método: `+ isMentalHralth(): boolean`. Emplea los enumeradores `WellnessCategory` y `ResourceStatus`.
@@ -176,7 +176,7 @@ El flujo está completamente aislado del framework:
 
 ## 7. Diagrama de Componentes
 
-![img_2.png](docs/Diagrama componentes.png)
+![img_2.png](docs/diagrama_componentes.png)
 
 **Resumen de la Arquitectura Hexagonal y Flujo de Componentes:**
 
