@@ -140,14 +140,25 @@ El flujo está completamente aislado del framework:
 <img src="docs/Diagrama_Entidad.jpg" alt="Diagrama Entidad-Relación" width="600"/>
 </div>
 
-### Tabla: `wellness_resources`
-Gestiona los recursos de apoyo estudiantil. Contiene campos como `id`, `name`, `category` (MENTAL_HEALTH, ACADEMIC, etc), `contact_email`, `location`, `description`.
+### Tabla: `Wellness_resources`
+- **PK id**: `UUID`
+- **name**: `VARCHAR(255) [NOT NULL]`
+- **description**: `TEXT`
+- **contact_phone**: `VARCHAR(255)`
+- **contact_email**: `VARCHAR(255)`
+- **shcedule**: `VARCHAR(255)`
+- **category**: `WellnessCategory(ENUM)`
+- **active**: `BOOLEAN`
 
-### Tabla: `survey_responses`
-Almacena el historial de encuestas completadas por el estudiante. Campos: `id`, `student_id`, `average_score`, `wellbeing_level` y fecha de completado.
+### Tabla: `Support_reports`
+- **PK id**: `UUID`
+- **user_id**: `UUID`
+- **reported_user_id**: `UUID`
+- **description**: `VARCAR(255)`
+- **category**: `ReportCategory`
+- **created_at**: `TIMESTAMP`
 
-### Tabla: `behavior_reports`
-Permite el seguimiento de incidentes. Campos: `id`, `case_number`, `reporter_id`, `report_type` (HARASSMENT, BULLYING, etc.), `description`, `status`.
+*(Nota: En el modelo se observa una relación desde `Wellness_resources` hacia el campo `reported_user_id` de la tabla `Support_reports`)*
 
 ---
 
@@ -158,10 +169,14 @@ Permite el seguimiento de incidentes. Campos: `id`, `case_number`, `reporter_id`
 </div>
 
 **Resumen del diseño de dominio:**
-- **`WellnessResource`**: Representa el apoyo (académico, psicológico). Validaciones de categoría en creación.
-- **`SurveyResponse`**: Contiene la sumatoria y el nivel de bienestar derivado del score de preguntas.
-- **`BehaviorReport`**: Entidad generadora de casos `RPT-YYYYMMDD-XXXX` para anonimidad total.
-- **Enumeradores Centrales**: `WellbeingLevel`, `WellnessCategory`, `ReportType`, `ReportStatus`.
+
+- **`Wellnes`**: Entidad principal que administra el recurso. Atributos: `id: UUID`, `name: String`, `description: String`, `contactPhone: String`, `schedule: String`, `active: boolean`, `appointmentEmail: Strintg`, `psychologistName: String`. Método: `+ isMentalHralth(): boolean`. Emplea los enumeradores `WellnessCategory` y `ResourceStatus`.
+- **`AppointmentMailto`**: Objeto dependiente de `Wellnes` que encapsula metadatos para enviar correos de citas. Atributos: `resourceId: String`, `psychologistName: String`, `appointmentEmail: String`, `subject: String`, `body: String`, `mailtoLink: String`.
+- **`Support`**: Entidad para el reporte de incidentes. Atributos: `id: UUID`, `reporterId: String`, `reportedUserId: String`, `description: String`, `category: ReporCategory`, `createdAt: LocalDateTime`. Método de validación `+ isValid(): boolean`. Emplea el enumerador `ReportCategory`.
+- **Enumeradores Centrales**:
+  - `WellnessCategory`: MENTAL_HEALTH, SPORTS, CULTURE, ACADEMIC_SUPPORT.
+  - `ResourceStatus`: ACTIVE, INACTIVE.
+  - `ReportCategory`: INAPPROPRIATE_BEHAVIOR, HARASSMENT, OFFENSIVE_CONTENT.
 
 ---
 
