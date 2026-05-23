@@ -186,13 +186,28 @@ El flujo está completamente aislado del framework:
 <img src="docs/Diagrama_Componentes.png" alt="Diagrama de Componentes" width="600"/>
 </div>
 
-| Componente | Tipo | Responsabilidad |
-|---|---|---|
-| `WellnessResourceController` | REST API | CRUD de recursos y generación de `mailto:` para citas. |
-| `WellnessSurveyController` | REST API | Obtención de cuestionario y cálculo de `WellbeingLevel`. |
-| `BehaviorReportController` | REST API | Recepción y rastreo anónimo de denuncias de comportamiento. |
-| `GlobalExceptionHandler` | Controller Advice | Mapea excepciones de dominio (`WellnessException`) a códigos HTTP. |
-| `*JpaRepository` | Spring Data | Ejecuta consultas JPA hacia la base de datos PostgreSQL. |
+**Resumen de la Arquitectura Hexagonal y Flujo de Componentes:**
+
+El diagrama ilustra el flujo de los datos a través de las siguientes capas:
+
+1. **EntryPoints (Controladores y Mappers):**
+   - `WellnessSurveyController` interactúa con `SurveyMapper`.
+   - `WellnessResourceController` interactúa con `WellnessResourceMapper`.
+   - `BehaviorReportController` interactúa con `BehaviorReportMapper`.
+2. **Ports/In (Puertos de Entrada):**
+   - `SubmitSurveyUseCase` y `GetRecommendationsUseCase`.
+   - `GetWellnessResourcesUseCase` y `ManageWellnessResourceUseCase`.
+   - `SubmitBehaviorReportUseCase`.
+3. **Use Case (Service):**
+   - Lógica de negocio orquestada por: `Wellness Survey Service`, `Wellness Resource Service` y `Behavior Report Service`. *(El diagrama ilustra una posible integración superior con un `Notification Service` externo).*
+4. **Ports/Out (Puertos de Salida):**
+   - Interfaces de persistencia: `SurveyResponseRepository`, `WellnessResourceRepositoryPort`, `BehaviorReportRepositoryPort`.
+5. **Infrastructure (Adaptadores y Spring Data):**
+   - `SurveyResponseRepositoryAdapter` (usa `SurveyResponseMapper`) delega a `JpaSurveyResponseRepository`.
+   - `WellnessResourceRepositoryAdapter` (usa `WellnessResourceMapper`) y `WellnessResourceRepositoryPortAdapter` delegan a `JpaWellnessResourceRepository`.
+   - `BehaviorReportRepositoryAdapter` (usa `BehaviorReportMapper`) delega a `BehaviorReportJpaRepository`.
+6. **Almacenamiento:**
+   - Todos los repositorios JPA persisten y leen de la base de datos central **PostgreSQL**.
 
 ---
 
