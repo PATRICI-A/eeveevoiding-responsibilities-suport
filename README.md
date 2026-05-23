@@ -317,7 +317,7 @@ Un diagrama de secuencia muestra, en orden temporal, cómo interactúan los acto
 
 Describe la consulta al directorio de recursos. Si `category != null`, el `WellnessResourceService` invoca `findByCategory(category)`; si es `null`, invoca `findAll()`. En ambos casos el resultado pasa por `WellnessResourceMapper` antes de retornar la lista de `WellnessResourceResponse` con 200.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/ListarRecursosBienestar.png)
  
 ---
 
@@ -325,7 +325,7 @@ Describe la consulta al directorio de recursos. Si `category != null`, el `Welln
 
 Muestra la búsqueda de un recurso específico por ID. Si el repositorio retorna `Optional.empty()`, el use case propaga la excepción y el cliente recibe 404. Si existe, el mapper convierte la entidad a dominio y luego a `WellnessResourceResponse` con 200.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/VerDetalleRecusrsiBienestar.png)
  
 ---
 
@@ -333,7 +333,7 @@ Muestra la búsqueda de un recurso específico por ID. Si el repositorio retorna
 
 Ilustra el flujo de reporte: el `BehaviorReportController` delega al `SubmitBehaviorReportUseCase`, que transforma el request a dominio vía `BehaviorReportMapper`, persiste el reporte en `BehaviorReportRepositoryPort` (obteniendo `id` y `caseNumber`) y retorna `BehaviorReportResponse` con 201 Created.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/ReportarComportamientoInapropiado.png)
  
 ---
 
@@ -341,7 +341,7 @@ Ilustra el flujo de reporte: el `BehaviorReportController` delega al `SubmitBeha
 
 Representa la consulta de los reportes propios del estudiante. El `BehaviorReportController` llama a `getReportsByReporter(reporterId)`, el service busca en el repositorio con `findReportsByReporterId`, transforma las entidades a dominio con `toDomainList` y finalmente mapea a `List<BehaviorReportResponse>` retornando 200.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/verReportesIncidentes.png)
  
 ---
 
@@ -349,7 +349,7 @@ Representa la consulta de los reportes propios del estudiante. El `BehaviorRepor
 
 Describe el envío de respuestas de encuesta. Si las respuestas son inválidas, `WellnessSurveyService` lanza `IllegalArgumentException` → 400. Si son válidas, persiste la `SurveyResponse`, calcula el nivel de bienestar con `calculateWellbeingLevel(responses)` y retorna `SurveyResultResponse` con 201 Created.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/Encuesta.png)
  
 ---
 
@@ -357,7 +357,7 @@ Describe el envío de respuestas de encuesta. Si las respuestas son inválidas, 
 
 Ilustra el motor de recomendaciones adaptativas. El `GetRecommendationUseCase` busca la última encuesta del estudiante con `findLatestByStudentId`. Si existe (`survey != null`), itera por categoría con `findByCategory` para personalizar las recomendaciones; si no existe, usa `findAllActive()` como fallback. Retorna `List<RecommendationResponse>` con 200.
 
-![]()
+![](https://github.com/PATRICI-A/eeveevoiding-responsibilities-suport/blob/feat/readme/docs/uml/RecomendacionesBienestar.png)
  
 ---
 
