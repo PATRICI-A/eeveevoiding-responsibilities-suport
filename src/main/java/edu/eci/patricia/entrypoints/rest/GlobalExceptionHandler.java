@@ -2,6 +2,7 @@ package edu.eci.patricia.entrypoints.rest;
 
 import edu.eci.patricia.domain.exception.ResourceNotFoundException;
 import edu.eci.patricia.domain.exception.WellnessException;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,12 @@ import java.util.stream.Collectors;
 /**
  * Global exception handler for all REST controllers in the wellness support service.
  * Translates domain exceptions into standardised HTTP error responses.
+ *
+ * <p><strong>Note:</strong> This handler is excluded from Swagger/OpenAPI documentation
+ * via {@code @Hidden} because SpringDoc automatically documents the error responses
+ * defined in the controller-level {@code @ApiResponses} annotations.</p>
  */
+@Hidden
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
