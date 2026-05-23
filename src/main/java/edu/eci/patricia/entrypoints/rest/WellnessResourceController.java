@@ -12,6 +12,8 @@ import edu.eci.patricia.domain.ports.in.GetWellnessResourcesUseCase;
 import edu.eci.patricia.domain.ports.in.ManageWellnessResourceUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,17 +23,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -51,25 +44,64 @@ public class WellnessResourceController {
     private final ManageWellnessResourceUseCase manageResourceUseCase;
     private final GetRecommendationsUseCase recommendationsUseCase;
 
-    /**
-     * Lists all wellness resources, with an optional category filter (RF23 HU-23-01 / HU-23-02).
-     *
-     * @param category       optional category filter (EMOTIONAL_SUPPORT, SPORTS, CULTURE, HEALTH, RECOMMENDATIONS, ALL)
-     * @param authentication the Spring Security authentication (for recommendations)
-     * @return list of wellness resource responses
-     */
     @GetMapping
-    @Operation(summary = "List all wellness resources",
-               description = "Returns all active wellness resources. Optionally filter by category. " +
-                             "The RECOMMENDATIONS category returns personalized resources based on the student's survey.")
+    @Operation(
+            operationId = "getAllWellnessResources",
+            summary = "List all wellness resources",
+            description = """
+                    Returns all active wellness resources available on campus. Supports optional \
+                    filtering by category. The RECOMMENDATIONS category returns personalised resources \
+                    based on the student's most recent wellness survey (PTR23.2).
+
+                    **Category behaviour:**
+                    - `ALL` or `null` — Returns all resources across all categories
+                    - `RECOMMENDATIONS` — Returns personalised recommendations based on survey responses (PTR23.2)
+                    - `EMOTIONAL_SUPPORT` — Returns only psychological/emotional support resources
+                    - `SPORTS` — Returns only sports and physical activity resources
+                    - `CULTURE` — Returns only cultural and recreational resources
+                    - `HEALTH` — Returns only physical health resources
+
+                    **Fallback:** If a student requests RECOMMENDATIONS but has never completed the survey, \
+                    returns all active resources (RN-23.2.2).
+
+                    **Access:** Requires valid JWT Bearer token."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Resources retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized — missing or invalid JWT")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = """
+                            Resources retrieved successfully. Returns an array of wellness resources \
+                            matching the requested category. Returns an empty array if no resources \
+                            match the filter criteria."""
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                            Invalid category parameter provided. Valid values: `EMOTIONAL_SUPPORT`, \
+                            `SPORTS`, `CULTURE`, `HEALTH`, `RECOMMENDATIONS`, `ALL`."""
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = """
+                            No valid JWT Bearer token was provided or the token has expired. \
+                            Re-authenticate and retry with a fresh token."""
+            )
     })
     public ResponseEntity<List<WellnessResourceResponse>> getAllResources(
-            @Parameter(description = "Optional category filter", example = "EMOTIONAL_SUPPORT")
+            @Parameter(
+                    description = """
+                            Optional category filter. Valid values:
+                            - `EMOTIONAL_SUPPORT` — Psychological and emotional support services
+                            - `SPORTS` — Physical activities and sports facilities
+                            - `CULTURE` — Cultural events and recreational activities
+                            - `HEALTH` — Medical and physical health services
+                            - `RECOMMENDATIONS` — Personalised recommendations (PTR23.2)
+                            - `ALL` — All categories (default behaviour when omitted)""",
+                    example = "EMOTIONAL_SUPPORT",
+                    schema = @Schema(implementation = WellnessCategory.class)
+            )
             @RequestParam(required = false) WellnessCategory category,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         // Handle RECOMMENDATIONS filter (PTR23.2)
         if (category == WellnessCategory.RECOMMENDATIONS) {
@@ -91,105 +123,203 @@ public class WellnessResourceController {
         return ResponseEntity.ok(resources);
     }
 
-    private WellnessResourceResponse mapRecommendationToResponse(RecommendationResponse rec) {
-        return WellnessResourceResponse.builder()
-                .id(UUID.fromString(rec.getId()))
-                .name(rec.getName())
-                .description(rec.getDescription())
-                .category(rec.getCategory())
-                .location(rec.getLocation())
-                .contactInfo(rec.getContactInfo())
-                .schedule(rec.getSchedule())
-                .recommendationReason(rec.getRecommendationReason())
-                .available(true) // Recommendations only include active resources
-                .build();
-    }
-
-    /**
-     * Retrieves a single wellness resource by its UUID.
-     *
-     * @param id the UUID of the resource
-     * @return the wellness resource details
-     */
     @GetMapping("/{id}")
-    @Operation(summary = "Get a wellness resource by ID")
+    @Operation(
+            operationId = "getWellnessResourceById",
+            summary = "Get a wellness resource by ID",
+            description = """
+                    Retrieves detailed information about a specific wellness resource using its UUID. \
+                    Returns all fields including location, contact information, schedule, and availability status.
+
+                    **Use case:** Called when a user clicks on a resource card to view full details, \
+                    including appointment email address for EMOTIONAL_SUPPORT resources.
+
+                    **Access:** Requires valid JWT Bearer token."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Resource found"),
-        @ApiResponse(responseCode = "404", description = "Resource not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Resource found and returned successfully.",
+                    content = @Content(schema = @Schema(implementation = WellnessResourceResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No wellness resource exists with the provided UUID."
+            )
     })
     public ResponseEntity<WellnessResourceResponse> getResourceById(
-            @Parameter(description = "UUID of the wellness resource") @PathVariable UUID id) {
+            @Parameter(
+                    description = "UUID of the wellness resource to retrieve",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID id) {
 
         return getResourcesUseCase.getResourceById(id)
                 .map(r -> ResponseEntity.ok(toResponse(r)))
                 .orElseThrow(() -> new ResourceNotFoundException("Wellness resource not found with id: " + id));
     }
 
-    /**
-     * Generates a pre-built mailto link for requesting a psychological appointment (RF23 HU-23-03).
-     * Only available for resources with category EMOTIONAL_SUPPORT. Returns HTTP 400 otherwise.
-     *
-     * @param id             the UUID of the EMOTIONAL_SUPPORT wellness resource
-     * @param authentication the Spring Security authentication (student ID extracted from JWT)
-     * @return the mailto components ready for the client to open in an email app
-     */
     @GetMapping("/{id}/cita-mailto")
-    @Operation(summary = "Generate appointment mailto for a EMOTIONAL_SUPPORT resource",
-               description = "Returns pre-built email components (to, subject, body) for requesting a " +
-                             "psychological appointment. Only available for EMOTIONAL_SUPPORT resources. " +
-                             "The system does NOT send the email — the student does from their email app.")
+    @Operation(
+            operationId = "generateAppointmentMailto",
+            summary = "Generate appointment mailto for an EMOTIONAL_SUPPORT resource",
+            description = """
+                    Generates a pre-configured `mailto:` link for requesting a psychological appointment (RF23 HU-23-03).
+                    This endpoint is only available for resources with category `EMOTIONAL_SUPPORT`.
+
+                    **What it returns:** Email components (recipient, subject, body) that the client can use to \
+                    open the user's default email application with the appointment request pre-filled.
+
+                    **What it does NOT do:** The system does NOT send the email automatically. The student must \
+                    click the link and send it from their own email client.
+
+                    **Use case:** Called when a student clicks "Request Appointment" on an EMOTIONAL_SUPPORT \
+                    resource card. The client uses the returned data to construct a mailto: link.
+
+                    **Access:** Requires valid JWT Bearer token. The student ID is automatically included in \
+                    the email body for context."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Mailto components generated"),
-        @ApiResponse(responseCode = "400", description = "Resource is not EMOTIONAL_SUPPORT category"),
-        @ApiResponse(responseCode = "404", description = "Resource not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = """
+                            Mailto components generated successfully. Returns recipient email, subject line, \
+                            and pre-filled body text ready for client-side mailto link construction.""",
+                    content = @Content(schema = @Schema(implementation = AppointmentMailtoResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                            The requested resource is not of type EMOTIONAL_SUPPORT. Appointment mailto generation \
+                            is only available for psychological support resources."""
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No wellness resource exists with the provided UUID."
+            )
     })
     public ResponseEntity<AppointmentMailtoResponse> getAppointmentMailto(
-            @Parameter(description = "UUID of the EMOTIONAL_SUPPORT wellness resource") @PathVariable UUID id,
-            Authentication authentication) {
+            @Parameter(
+                    description = "UUID of the EMOTIONAL_SUPPORT wellness resource",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Authentication authentication) {
 
         String studentId = (String) authentication.getPrincipal();
         AppointmentMailtoResponse response = getResourcesUseCase.generateAppointmentMailto(id, studentId);
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Creates a new wellness resource.
-     *
-     * @param request the resource creation payload
-     * @return the created resource with HTTP 201
-     */
     @PostMapping
-    @Operation(summary = "Create a wellness resource", description = "Creates a new campus wellness resource.")
+    @Operation(
+            operationId = "createWellnessResource",
+            summary = "Create a wellness resource",
+            description = """
+                    Creates a new wellness resource in the catalogue. This endpoint is typically used by \
+                    administrators to add new support services, activities, or facilities to the platform.
+
+                    **Required fields:** name, description, category, location, contactInfo
+                    
+                    **Optional fields:** schedule, available (defaults to true), appointmentEmail, psychologistName
+                    
+                    **Validation:** Name must be unique within the system. Category must be a valid WellnessCategory value.
+                    
+                    **Access:** Requires ADMINISTRADOR role (implicitly enforced by security configuration)."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Resource created"),
-        @ApiResponse(responseCode = "400", description = "Validation error"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Resource created successfully. Returns the created resource with assigned UUID.",
+                    content = @Content(schema = @Schema(implementation = WellnessResourceResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                            Validation error. Common causes: missing required fields, duplicate resource name, \
+                            invalid category value, or malformed contact information."""
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied. Creating resources requires ADMINISTRADOR role."
+            )
     })
-    public ResponseEntity<WellnessResourceResponse> createResource(@Valid @RequestBody WellnessResourceRequest request) {
+    public ResponseEntity<WellnessResourceResponse> createResource(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Wellness resource creation payload",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = WellnessResourceRequest.class))
+            )
+            @Valid @RequestBody WellnessResourceRequest request) {
         WellnessResource domain = toDomain(request);
         WellnessResource created = manageResourceUseCase.createResource(domain);
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(created));
     }
 
-    /**
-     * Updates an existing wellness resource.
-     *
-     * @param id      the UUID of the resource to update
-     * @param request the update payload
-     * @return the updated resource
-     */
     @PutMapping("/{id}")
-    @Operation(summary = "Update a wellness resource")
+    @Operation(
+            operationId = "updateWellnessResource",
+            summary = "Update a wellness resource",
+            description = """
+                    Updates an existing wellness resource. Partial updates are supported — only provided fields \
+                    are updated; omitted fields retain their existing values.
+
+                    **Use case:** Called by administrators to modify resource details such as schedule, \
+                    contact information, or availability status.
+
+                    **Validation:** If name is provided, it must be unique (cannot conflict with another resource's name).
+
+                    **Access:** Requires ADMINISTRADOR role."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Resource updated"),
-        @ApiResponse(responseCode = "400", description = "Validation error"),
-        @ApiResponse(responseCode = "404", description = "Resource not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Resource updated successfully. Returns the updated resource.",
+                    content = @Content(schema = @Schema(implementation = WellnessResourceResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error. Common causes: duplicate resource name or invalid category value."
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied. Updating resources requires ADMINISTRADOR role."
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No wellness resource exists with the provided UUID."
+            )
     })
     public ResponseEntity<WellnessResourceResponse> updateResource(
-            @Parameter(description = "UUID of the resource to update") @PathVariable UUID id,
+            @Parameter(
+                    description = "UUID of the resource to update",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Wellness resource update payload",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = WellnessResourceRequest.class))
+            )
             @Valid @RequestBody WellnessResourceRequest request) {
 
         WellnessResource domain = toDomain(request);
@@ -197,21 +327,45 @@ public class WellnessResourceController {
         return ResponseEntity.ok(toResponse(updated));
     }
 
-    /**
-     * Deletes a wellness resource by ID.
-     *
-     * @param id the UUID of the resource to delete
-     * @return HTTP 204 No Content
-     */
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a wellness resource")
+    @Operation(
+            operationId = "deleteWellnessResource",
+            summary = "Delete a wellness resource",
+            description = """
+                    Permanently removes a wellness resource from the catalogue. Deletion is physical (hard delete).
+
+                    **Use case:** Called by administrators to remove outdated or deactivated resources.
+
+                    **Note:** Deletion is irreversible. Consider setting `available = false` instead of deletion \
+                    for temporary deactivation.
+
+                    **Access:** Requires ADMINISTRADOR role."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "204", description = "Resource deleted"),
-        @ApiResponse(responseCode = "404", description = "Resource not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Resource deleted successfully. No response body returned."
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied. Deleting resources requires ADMINISTRADOR role."
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No wellness resource exists with the provided UUID."
+            )
     })
     public ResponseEntity<Void> deleteResource(
-            @Parameter(description = "UUID of the resource to delete") @PathVariable UUID id) {
+            @Parameter(
+                    description = "UUID of the resource to delete",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID id) {
 
         manageResourceUseCase.deleteResource(id);
         return ResponseEntity.noContent().build();
@@ -247,6 +401,20 @@ public class WellnessResourceController {
                 .available(resource.isAvailable())
                 .appointmentEmail(resource.getAppointmentEmail())
                 .psychologistName(resource.getPsychologistName())
+                .build();
+    }
+
+    private WellnessResourceResponse mapRecommendationToResponse(RecommendationResponse rec) {
+        return WellnessResourceResponse.builder()
+                .id(UUID.fromString(rec.getId()))
+                .name(rec.getName())
+                .description(rec.getDescription())
+                .category(rec.getCategory())
+                .location(rec.getLocation())
+                .contactInfo(rec.getContactInfo())
+                .schedule(rec.getSchedule())
+                .recommendationReason(rec.getRecommendationReason())
+                .available(true) // Recommendations only include active resources
                 .build();
     }
 }

@@ -8,6 +8,8 @@ import edu.eci.patricia.domain.model.BehaviorReport;
 import edu.eci.patricia.domain.ports.in.SubmitBehaviorReportUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,12 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -38,29 +35,62 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Tag(name = "Behavior Reports", description = "Endpoints for submitting and tracking inappropriate behavior reports (RF24)")
 @SecurityRequirement(name = "bearerAuth")
-public class    BehaviorReportController {
+public class BehaviorReportController {
 
     private final SubmitBehaviorReportUseCase submitBehaviorReportUseCase;
 
-    /**
-     * Submits a new behavior report. Returns HTTP 201 with a unique case number (RF24).
-     *
-     * @param request        the report payload
-     * @param authentication the Spring Security authentication holding the student's userId (from JWT)
-     * @return the created report with caseNumber and confirmation message
-     */
     @PostMapping
-    @Operation(summary = "Submit a behavior report",
-               description = "Creates a new report of inappropriate behavior. Reporter ID is taken from JWT. " +
-                             "Returns a unique case number in format RPT-YYYYMMDD-XXXX.")
+    @Operation(
+            operationId = "submitBehaviorReport",
+            summary = "Submit a behavior report",
+            description = """
+                    Creates a new report of inappropriate behavior (RF24). Reports are submitted anonymously \
+                    from the perspective of the reporter — the reporter's identity is stored for tracking \
+                    but is never exposed to the reported party.
+
+                    **Response:** Upon successful submission, the system returns:
+                    - A unique case number in format `RPT-YYYYMMDD-XXXX` (e.g., RPT-20250615-0001)
+                    - The report ID (UUID) for future reference
+                    - Current status (initially `PENDING`)
+
+                    **Use case:** Called when a student encounters inappropriate content or behavior \
+                    within the platform (messages, posts, or user interactions).
+
+                    **Privacy:** The reporter's identity is encrypted in storage. Support staff can see \
+                    the reporter ID for follow-up purposes, but the reported user never sees who reported them.
+
+                    **Access:** Requires valid JWT Bearer token. The reporter ID is extracted from the token."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "201", description = "Report submitted — case number assigned"),
-        @ApiResponse(responseCode = "400", description = "Validation error"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "201",
+                    description = """
+                            Report submitted successfully. Returns the created report with a unique case number. \
+                            The case number should be shown to the user for reference.""",
+                    content = @Content(schema = @Schema(implementation = BehaviorReportResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = """
+                            Validation error. Common causes: missing required fields (reportType, description), \
+                            invalid reportType value, or description exceeding maximum length."""
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            )
     })
     public ResponseEntity<BehaviorReportResponse> submitReport(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = """
+                            Payload containing report details. Required fields: `reportType` and `description`. \
+                            Optional fields: `referenceId` (e.g., message ID or post ID) to link the report \
+                            to specific content.""",
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = BehaviorReportRequest.class))
+            )
             @Valid @RequestBody BehaviorReportRequest request,
-            Authentication authentication) {
+            @Parameter(hidden = true) Authentication authentication) {
 
         UUID reporterId = UUID.fromString((String) authentication.getPrincipal());
 
@@ -75,25 +105,48 @@ public class    BehaviorReportController {
         return ResponseEntity.status(HttpStatus.CREATED).body(toResponse(created));
     }
 
-    /**
-     * Retrieves a behavior report by UUID. Only the original reporter can view their own report.
-     *
-     * @param id             the UUID of the report
-     * @param authentication the Spring Security authentication
-     * @return the report details
-     */
     @GetMapping("/{id}")
-    @Operation(summary = "Get a behavior report by ID",
-               description = "Returns report details. Access restricted to the student who submitted it.")
+    @Operation(
+            operationId = "getBehaviorReportById",
+            summary = "Get a behavior report by ID",
+            description = """
+                    Retrieves detailed information about a specific behavior report using its UUID.
+
+                    **Access control:** Only the student who submitted the report can view its details. \
+                    A student cannot view reports submitted by other users (HTTP 403).
+
+                    **Use case:** Called when a student wants to check the status of a previously \
+                    submitted report or view the assigned case number.
+
+                    **Access:** Requires valid JWT Bearer token."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Report found"),
-        @ApiResponse(responseCode = "403", description = "Forbidden — student is not the reporter"),
-        @ApiResponse(responseCode = "404", description = "Report not found"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Report found and returned successfully.",
+                    content = @Content(schema = @Schema(implementation = BehaviorReportResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Access denied. The authenticated user is not the reporter of this report."
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "No behavior report exists with the provided UUID."
+            )
     })
     public ResponseEntity<BehaviorReportResponse> getReportById(
-            @Parameter(description = "UUID of the report to retrieve") @PathVariable UUID id,
-            Authentication authentication) {
+            @Parameter(
+                    description = "UUID of the report to retrieve",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID id,
+            @Parameter(hidden = true) Authentication authentication) {
 
         UUID requesterId = UUID.fromString((String) authentication.getPrincipal());
 
@@ -107,20 +160,36 @@ public class    BehaviorReportController {
         return ResponseEntity.ok(toResponse(report));
     }
 
-    /**
-     * Returns all behavior reports submitted by the authenticated student.
-     *
-     * @param authentication the Spring Security authentication
-     * @return list of the current student's behavior reports
-     */
     @GetMapping("/my-reports")
-    @Operation(summary = "List my behavior reports",
-               description = "Returns all behavior reports submitted by the currently authenticated student.")
+    @Operation(
+            operationId = "getMyBehaviorReports",
+            summary = "List my behavior reports",
+            description = """
+                    Returns all behavior reports submitted by the currently authenticated student. \
+                    Use this endpoint to populate a history of past reports on the student's profile.
+
+                    **Pagination:** Results are returned as a list (default sorting by creation date descending). \
+                    If pagination is needed in the future, consider adding `page` and `size` parameters.
+
+                    **Empty result:** Returns an empty list `[]` if the student has never submitted any reports — \
+                    never HTTP 404.
+
+                    **Access:** Requires valid JWT Bearer token."""
+    )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "Reports retrieved successfully"),
-        @ApiResponse(responseCode = "401", description = "Unauthorized")
+            @ApiResponse(
+                    responseCode = "200",
+                    description = """
+                            Reports retrieved successfully. Returns an array of behavior reports submitted \
+                            by the authenticated student. Returns an empty array if no reports exist."""
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "No valid JWT Bearer token was provided or the token has expired."
+            )
     })
-    public ResponseEntity<List<BehaviorReportResponse>> getMyReports(Authentication authentication) {
+    public ResponseEntity<List<BehaviorReportResponse>> getMyReports(
+            @Parameter(hidden = true) Authentication authentication) {
         UUID reporterId = UUID.fromString((String) authentication.getPrincipal());
 
         List<BehaviorReportResponse> reports = submitBehaviorReportUseCase.getReportsByReporter(reporterId)
