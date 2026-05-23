@@ -281,10 +281,7 @@ src/test/java/edu/eci/patricia/
 
 Se espera y exige una cobertura general `>= 80%` a través de JaCoCo. La carpeta `infrastructure/config` y las clases `Dto` se han excluido estratégicamente del análisis al carecer de lógica propia.
 
-<div align="center">
-<img src="docs/jacoco.png" alt="Jacoco Coverage Report" width="600"/>
-</div>
-
+![img.png](docs/jacoco.png)
 ---
 
 ## 13. Cómo Ejecutar
