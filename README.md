@@ -2,7 +2,7 @@
 
 # Bienestar Service (Support) — Microservicio de Bienestar y Soporte (M09)
 
-### *"Momentos que inspiran, parches que unen. Cuidando nuestra comunidad."*
+### *"Momentos que inspiran, parches que unen."*
 
 ---
 
@@ -136,10 +136,7 @@ El flujo está completamente aislado del framework:
 
 ## 5. Diagrama de Datos
 
-<div align="center">
-<img src="docs/Diagrama_Entidad.jpg" alt="Diagrama Entidad-Relación" width="600"/>
-</div>
-
+![img.png](docs/diagrama datos.png)
 ### Tabla: `Wellness_resources`
 - **PK id**: `UUID`
 - **name**: `VARCHAR(255) [NOT NULL]`
@@ -164,10 +161,7 @@ El flujo está completamente aislado del framework:
 
 ## 6. Diagrama de Clases
 
-<div align="center">
-<img src="docs/Diagrama_Clases.jpg" alt="Diagrama de Clases" width="600"/>
-</div>
-
+![img_1.png](docs/Diagrama clases.png)
 **Resumen del diseño de dominio:**
 
 - **`Wellnes`**: Entidad principal que administra el recurso. Atributos: `id: UUID`, `name: String`, `description: String`, `contactPhone: String`, `schedule: String`, `active: boolean`, `appointmentEmail: Strintg`, `psychologistName: String`. Método: `+ isMentalHralth(): boolean`. Emplea los enumeradores `WellnessCategory` y `ResourceStatus`.
@@ -182,9 +176,7 @@ El flujo está completamente aislado del framework:
 
 ## 7. Diagrama de Componentes
 
-<div align="center">
-<img src="docs/Diagrama_Componentes.png" alt="Diagrama de Componentes" width="600"/>
-</div>
+![img_2.png](docs/Diagrama componentes.png)
 
 **Resumen de la Arquitectura Hexagonal y Flujo de Componentes:**
 
