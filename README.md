@@ -282,10 +282,6 @@ Headers: X-User-Name: Laura González
 
 ## 7. 📊 Diagrama
 
-### Diagrama de componentes - Vista General
-```
-///////////////////////
-```
 ### Diagrama de Componentes - Vista Especifica
 ![Diagrama de Componentes](docs/uml/DiagramaComponentesBienestar.png)
 
@@ -309,7 +305,60 @@ Headers: X-User-Name: Laura González
 
 ### Diagrama de Despliegue
 
-///////////////////////
+![]()
+
+---
+
+### 📊 Diagramas de Secuencia
+
+Un diagrama de secuencia muestra, en orden temporal, cómo interactúan los actores y componentes del sistema mediante mensajes o llamadas.
+
+#### 1. Listar Recursos de Bienestar
+
+Describe la consulta al directorio de recursos. Si `category != null`, el `WellnessResourceService` invoca `findByCategory(category)`; si es `null`, invoca `findAll()`. En ambos casos el resultado pasa por `WellnessResourceMapper` antes de retornar la lista de `WellnessResourceResponse` con 200.
+
+![]()
+ 
+---
+
+#### 2. Ver Detalle de Recurso de Bienestar
+
+Muestra la búsqueda de un recurso específico por ID. Si el repositorio retorna `Optional.empty()`, el use case propaga la excepción y el cliente recibe 404. Si existe, el mapper convierte la entidad a dominio y luego a `WellnessResourceResponse` con 200.
+
+![]()
+ 
+---
+
+#### 3. Reportar Comportamiento Inapropiado
+
+Ilustra el flujo de reporte: el `BehaviorReportController` delega al `SubmitBehaviorReportUseCase`, que transforma el request a dominio vía `BehaviorReportMapper`, persiste el reporte en `BehaviorReportRepositoryPort` (obteniendo `id` y `caseNumber`) y retorna `BehaviorReportResponse` con 201 Created.
+
+![]()
+ 
+---
+
+#### 4. Ver Reportes de Incidentes
+
+Representa la consulta de los reportes propios del estudiante. El `BehaviorReportController` llama a `getReportsByReporter(reporterId)`, el service busca en el repositorio con `findReportsByReporterId`, transforma las entidades a dominio con `toDomainList` y finalmente mapea a `List<BehaviorReportResponse>` retornando 200.
+
+![]()
+ 
+---
+
+#### 5. Encuesta de Bienestar
+
+Describe el envío de respuestas de encuesta. Si las respuestas son inválidas, `WellnessSurveyService` lanza `IllegalArgumentException` → 400. Si son válidas, persiste la `SurveyResponse`, calcula el nivel de bienestar con `calculateWellbeingLevel(responses)` y retorna `SurveyResultResponse` con 201 Created.
+
+![]()
+ 
+---
+
+#### 6. Recomendaciones de Bienestar
+
+Ilustra el motor de recomendaciones adaptativas. El `GetRecommendationUseCase` busca la última encuesta del estudiante con `findLatestByStudentId`. Si existe (`survey != null`), itera por categoría con `findByCategory` para personalizar las recomendaciones; si no existe, usa `findAllActive()` como fallback. Retorna `List<RecommendationResponse>` con 200.
+
+![]()
+ 
 ---
 
 ## 8. ⚠️ Manejo de Errores
