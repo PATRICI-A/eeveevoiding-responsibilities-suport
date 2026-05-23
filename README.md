@@ -1,8 +1,8 @@
 <div align="center">
 
-# Bienestar Service (Support)
+# Bienestar Service (Support) — Microservicio de Bienestar y Soporte (M09)
 
-### *"Momentos que inspiran, parches que unen."*
+### *"Momentos que inspiran, parches que unen. Cuidando nuestra comunidad."*
 
 ---
 
@@ -16,6 +16,7 @@
 
 ![Docker](https://img.shields.io/badge/Docker-Container-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 ![Maven](https://img.shields.io/badge/Maven-Build-C71A36?style=for-the-badge&logo=apache-maven&logoColor=white)
+![JaCoCo](https://img.shields.io/badge/JaCoCo-Coverage-8A0808?style=for-the-badge)
 
 ### Arquitectura
 
@@ -67,76 +68,116 @@
 
 | **Tecnología / Herramienta** | **Uso principal en el proyecto** |
 |---|---|
-| **Java 21 (OpenJDK)** | Lenguaje base con soporte para Spring Boot. |
-| **Spring Boot 3.3.0** | Framework principal para la exposición de endpoints REST. |
-| **Spring Web** | Exposición de endpoints REST mediante `WellnessController`. |
-| **Spring Security + JWT** | Protección de endpoints mediante token de sesión. |
-| **Spring Data JPA** | Acceso y manipulación de datos en la BD relacionar PostgreSQL. |
-| **PostgreSQL** | BD relacional principal empleada para almacenar recursos de bienestar. |
+| **Java 21 (OpenJDK)** | Lenguaje base con soporte para Spring Boot y Virtual Threads. |
+| **Spring Boot 3.3.0** | Framework principal. Agrupa JPA, Security y Swagger. |
+| **Spring Web** | Exposición de endpoints REST mediante los controladores `WellnessResourceController`, `WellnessSurveyController` y `BehaviorReportController`. |
+| **Spring Security + JWT** | Protección de endpoints mediante token de sesión configurado con filtros personalizados y extracción de claims. |
+| **Spring Data JPA** | Acceso a PostgreSQL, mapeando las entidades del dominio de bienestar. |
+| **PostgreSQL 16** | BD relacional principal — almacena recursos, respuestas de cuestionarios y reportes de comportamiento. |
 | **Apache Maven** | Gestión de dependencias y automatización de builds. |
-| **Lombok 1.18.38** | Reducción de boilerplate (`@RequiredArgsConstructor`, `@Getter`, etc). |
-| **H2** | BD en memoria para pruebas unitarias y de integración. |
-| **JUnit 5 & Mockito** | Framework de pruebas unitarias y simulación de dependencias. |
-| **JaCoCo 0.8.13** | Análisis de la cobertura de código probada. |
-| **SpringDoc OpenAPI 2.8.8** | Exposición dinámica del esquema de API mediante Swagger UI. |
-| **Docker** | Contenedorización de la aplicación y la infraestructura para despliegues portables. |
+| **Lombok 1.18.38** | Reducción de boilerplate con `@Getter`, `@Builder`, `@NoArgsConstructor`, `@AllArgsConstructor`. |
+| **H2** | BD en memoria para pruebas unitarias y perfil dev rápido. |
+| **JUnit 5 & Mockito** | Framework de pruebas unitarias y simulación de dependencias (Mocks). |
+| **JaCoCo 0.8.13** | Análisis de cobertura de pruebas integrada en el ciclo de vida de Maven. |
+| **SpringDoc OpenAPI 2.8.8** | Exposición dinámica del esquema de API y Swagger UI. |
+| **Docker** | Contenedorización de la aplicación y base de datos local vía `docker-compose`. |
 
 ---
 
 ## 3. Descripción del Microservicio
 
-El microservicio de **Bienestar y Soporte** (conocido como `suport-service` o `eeveevoiding-responsibilities-suport`) dentro de la plataforma PATRIC.IA es responsable de la administración de recursos de apoyo estudiantil, tanto académicos como de salud mental. Su principal enfoque es permitir que los estudiantes conozcan y se comuniquen con recursos de apoyo institucionales (incluyendo la agenda de citas vía mail).
+El microservicio de **Bienestar y Soporte** (M09), conocido en el repositorio como `eeveevoiding-responsibilities-suport`, es el encargado de administrar herramientas institucionales enfocadas en la salud y el entorno positivo de la comunidad dentro de PATRIC.IA.
 
-Puerto: `8080` (por defecto). Integrado con **PostgreSQL** como BD principal.
+Sus responsabilidades principales cubren tres frentes:
+1. **Gestión de Recursos (RF25):** Permite administrar contactos de bienestar, asesorías académicas y atención psicológica, facilitando el agendamiento de citas vía mail.
+2. **Cuestionarios de Bienestar (RF23):** Los estudiantes pueden completar encuestas periódicas sobre su estado emocional o académico, recibiendo automáticamente recomendaciones basadas en su nivel de bienestar evaluado.
+3. **Reportes de Comportamiento (RF24):** Sistema anónimo para denunciar conductas inapropiadas, asignando un número de caso único a cada incidente y protegiendo siempre la identidad del denunciante.
+
+Puerto: `8080`. Integrado con **PostgreSQL**.
 
 ---
 
 ## 4. Cómo Funciona
 
-Emplea **Arquitectura Hexagonal (Ports & Adapters)** y **Clean Architecture** estructurado de la siguiente forma:
+### Arquitectura Hexagonal (Ports & Adapters) y Clean Architecture
 
-- **Dominio:** La entidad core `WellnessResource` gestiona dos tipos de creaciones (general o para salud mental), validando que estos últimos contengan información psicológica.
-- **Aplicación:** Casos de uso (`CreateWellnessResourceUseCase`, `UpdateWellnessResourceUseCase`, etc.) controlan la orquestación lógica y el mapeo.
-- **Infraestructura y Entrypoints:** Controladores como `WellnessController` y adaptadores JPA (ej. `WellnessResourceRepositoryAdapter`) ejecutan las operaciones de red y de persistencia.
+```
+┌─────────────────────────────────────────────────────┐
+│                  EXTERIOR                           │
+│  ┌──────────────┐         ┌──────────────────────┐  │
+│  │  Controllers │         │  JPA Adapters        │  │
+│  │  (REST)      │         │  (PostgreSQL)        │  │
+│  │  Port In ──► │         │                      │  │
+│  └──────┬───────┘         └────────────┬─────────┘  │
+│         │          DOMINIO             │ ◄ Port Out  │
+│         ▼   ┌────────────────────┐     │             │
+│         └──►│  Use Cases /       │◄────┘             │
+│             │  Domain Models     │                   │
+│             └────────────────────┘                   │
+└─────────────────────────────────────────────────────┘
+```
 
-### Patrones de Diseño
+El flujo está completamente aislado del framework:
+1. Las peticiones entran por los `*Controller` en la capa *entrypoints*.
+2. El controlador mapea el request a los Use Cases de *domain/ports/in*.
+3. Los *Use Cases* (implementados en *application/service*) ejecutan lógica de negocio y se comunican con los puertos de salida (*domain/ports/out*).
+4. La persistencia ocurre a través de los *adapters* en la capa *infrastructure*.
 
-| Patrón | Descripción |
-|---|---|
-| **Ports & Adapters** | Los casos de uso fungen como puertos de entrada (Ej. `GetWellnessResourcesPort`) que aíslan el dominio del framework REST. |
-| **Value Object** | `ResourceId` y `MailtoAppointment` para abstraer los comportamientos y validación de tipos nativos. |
-| **Factory Methods** | Métodos como `createGeneral` y `createMentalHealth` en la entidad core para inicializar con estado consistente. |
+### Lógica de Dominio y Patrones de Diseño
+
+| Patrón / Concepto | Ubicación | Descripción |
+|---|---|---|
+| **Ports & Adapters** | Toda la arquitectura | Interfaces claras (`In/Out`) para independizar el dominio. |
+| **Value Object** | `MailtoAppointment`, `ResourceId` | Abstraen las validaciones de negocio de los tipos nativos (ej. metadatos para enviar correos estructurados). |
+| **Factory Methods** | `WellnessResource` | Métodos semánticos (`createGeneral`, `createMentalHealth`) garantizan un estado consistente en la entidad sin usar constructores anémicos. |
+| **Evaluación de Bienestar** | `WellnessSurveyService` | Algoritmo que promedia las respuestas de una escala de Likert (1-4) para asignar niveles (CRITICAL, LOW, MODERATE, HIGH, EXCELLENT). |
 
 ---
 
 ## 5. Diagrama de Datos
 
-> 📷 **[Insert Image: Diagrama_Entidad.jpg]**
+<div align="center">
+<img src="docs/Diagrama_Entidad.jpg" alt="Diagrama Entidad-Relación" width="600"/>
+</div>
 
-*(Modelo de datos administrado mediante `WellnessResourceEntity` utilizando JPA).*
+### Tabla: `wellness_resources`
+Gestiona los recursos de apoyo estudiantil. Contiene campos como `id`, `name`, `category` (MENTAL_HEALTH, ACADEMIC, etc), `contact_email`, `location`, `description`.
+
+### Tabla: `survey_responses`
+Almacena el historial de encuestas completadas por el estudiante. Campos: `id`, `student_id`, `average_score`, `wellbeing_level` y fecha de completado.
+
+### Tabla: `behavior_reports`
+Permite el seguimiento de incidentes. Campos: `id`, `case_number`, `reporter_id`, `report_type` (HARASSMENT, BULLYING, etc.), `description`, `status`.
 
 ---
 
 ## 6. Diagrama de Clases
 
-> 📷 **[Insert Image: Diagrama_Clases.jpg]**
+<div align="center">
+<img src="docs/Diagrama_Clases.jpg" alt="Diagrama de Clases" width="600"/>
+</div>
 
-**Resumen del dominio:**
-
-- **`WellnessResource`**: Representa un recurso de la universidad (contacto, categoría, psicólogo). 
-- **`MailtoAppointment`**: Objeto de valor inmutable con los metadatos para enviar un correo de solicitud de cita.
+**Resumen del diseño de dominio:**
+- **`WellnessResource`**: Representa el apoyo (académico, psicológico). Validaciones de categoría en creación.
+- **`SurveyResponse`**: Contiene la sumatoria y el nivel de bienestar derivado del score de preguntas.
+- **`BehaviorReport`**: Entidad generadora de casos `RPT-YYYYMMDD-XXXX` para anonimidad total.
+- **Enumeradores Centrales**: `WellbeingLevel`, `WellnessCategory`, `ReportType`, `ReportStatus`.
 
 ---
 
 ## 7. Diagrama de Componentes
 
-> 📷 **[Insert Image: Diagrama_Componentes.png]**
+<div align="center">
+<img src="docs/Diagrama_Componentes.png" alt="Diagrama de Componentes" width="600"/>
+</div>
 
-| Componente | Tipo | Interfaz |
+| Componente | Tipo | Responsabilidad |
 |---|---|---|
-| `WellnessController` | REST Controller | Expone rutas HTTP en `/api/v1/bienestar/recursos` |
-| `GlobalExceptionHandler` | Controller Advice | Centraliza y captura errores de dominio |
-| `WellnessResourceJpaRepository` | Spring Data Repository | Ejecuta persistencia en PostgreSQL |
+| `WellnessResourceController` | REST API | CRUD de recursos y generación de `mailto:` para citas. |
+| `WellnessSurveyController` | REST API | Obtención de cuestionario y cálculo de `WellbeingLevel`. |
+| `BehaviorReportController` | REST API | Recepción y rastreo anónimo de denuncias de comportamiento. |
+| `GlobalExceptionHandler` | Controller Advice | Mapea excepciones de dominio (`WellnessException`) a códigos HTTP. |
+| `*JpaRepository` | Spring Data | Ejecuta consultas JPA hacia la base de datos PostgreSQL. |
 
 ---
 
@@ -144,12 +185,13 @@ Emplea **Arquitectura Hexagonal (Ports & Adapters)** y **Clean Architecture** es
 
 <div align="center">
 
-| ID | Funcionalidad | Descripción |
-|---|---|---|
-| F01 | **Gestión de Recursos (CRUD)** | Creación, consulta (listados y por ID), actualización y eliminación de recursos de bienestar universitario. |
-| F02 | **Citas de Salud Mental** | Generación de enlaces `mailto:` con la estructura de la solicitud de citas enfocadas en psicología. |
-| F03 | **Filtrado Categórico** | Capacidad de filtrar los recursos por su tipo de categoría (`MENTAL_HEALTH`, `ACADEMIC`, etc). |
-| F04 | **Protección JWT** | Autenticación de las rutas del controlador basada en la lectura de tokens. |
+| ID | RF | Funcionalidad | Descripción |
+|---|---|---|---|
+| F01 | RF25 | **Gestión de Recursos (CRUD)** | Permite administrar contactos institucionales (psicología, monitorias). Incluye filtrado por categoría. |
+| F02 | RF25 | **Citas de Salud Mental** | Generación dinámica de `mailto:` estructurado con "Asunto" y "Cuerpo" para la solicitud rápida de asesorías. |
+| F03 | RF23 | **Cuestionario de Bienestar** | Exposición de una batería de 10 preguntas. El estudiante lo diligencia y el sistema pondera su nivel de bienestar. |
+| F04 | RF23 | **Recomendaciones Automáticas** | A partir del resultado del cuestionario, el sistema sugiere recursos específicos de la BD afines a las necesidades detectadas. |
+| F05 | RF24 | **Reportes de Comportamiento** | Creación de reportes anónimos. Genera un número de radicado y aísla la identidad del denunciante respecto de la parte acusada. |
 
 </div>
 
@@ -157,46 +199,57 @@ Emplea **Arquitectura Hexagonal (Ports & Adapters)** y **Clean Architecture** es
 
 ## 9. Endpoints
 
-### Resumen
+### Resumen de Rutas Principales
 
-| Método | Endpoint | Funcionalidad |
-|---|---|---|
-| `GET` | `/api/v1/bienestar/recursos` | Consulta el listado de recursos (Soporta filtro `?categoryFilter=`) |
-| `GET` | `/api/v1/bienestar/recursos/{id}` | Retorna el detalle de un recurso mediante su ID |
-| `POST` | `/api/v1/bienestar/recursos` | Crea un nuevo recurso |
-| `PUT` | `/api/v1/bienestar/recursos/{id}` | Actualiza un recurso existente |
-| `DELETE` | `/api/v1/bienestar/recursos/{id}` | Desactiva/elimina un recurso específico |
-| `GET` | `/api/v1/bienestar/recursos/{id}/cita-mailto` | Retorna los metadatos de cita (`subject`, `body`, `email`) utilizando el header `X-Student-Name`. |
+| Dominio | Endpoint | Método | Funcionalidad |
+|---|---|---|---|
+| **Recursos** | `/api/v1/wellness/resources` | `GET`, `POST` | Listar y crear recursos de bienestar. |
+| **Recursos** | `/api/v1/wellness/resources/{id}` | `GET`, `PUT`, `DELETE` | Operaciones puntuales sobre un recurso. |
+| **Recursos** | `/api/v1/wellness/resources/{id}/cita-mailto` | `GET` | Generar el enlace `mailto:` pre-llenado. |
+| **Cuestionarios** | `/api/v1/wellness/surveys/questions` | `GET` | Obtener las preguntas del cuestionario de 10 puntos. |
+| **Cuestionarios** | `/api/v1/wellness/surveys/submit` | `POST` | Enviar las respuestas de la encuesta. |
+| **Cuestionarios** | `/api/v1/wellness/surveys/my-results` | `GET` | Ver historial de resultados del usuario actual. |
+| **Reportes** | `/api/v1/wellness/reports` | `POST` | Crear una denuncia de mal comportamiento. |
+| **Reportes** | `/api/v1/wellness/reports/my-reports` | `GET` | Revisar el estado de las denuncias interpuestas. |
+
+> **Autenticación:** Todos los endpoints exigen la inclusión de un JWT válido en la cabecera `Authorization: Bearer <token>`, del cual se extrae el ID del estudiante para aislar sus acciones.
 
 ---
 
 ## 10. Colas de Mensajería
 
-Para este módulo, de momento no se maneja cola de mensajería (las interacciones con recursos son mediante persistencia relacional síncrona).
+En el alcance actual, el módulo se centra en persistencia relacional síncrona, sin la publicación o consumo activo a través de Kafka o RabbitMQ. Toda la información (encuestas y reportes) se consolida en la BD para eventual consumo por módulos estadísticos (M12) a demanda o a futuro.
 
 ---
 
 ## 11. Evidencia de Pruebas
 
-### Clases de prueba implementadas
-
-Se incluye cobertura unitaria a través de test de contexto, adaptadores y casos de uso:
+El servicio tiene cobertura robusta a nivel de Dominio, Aplicación (Service layers), Controladores y Adaptadores JPA. 
 
 ```
 src/test/java/edu/eci/patricia/
-└── EeveevoidingResponsibilitiesSuportApplicationTests.java  (Y test funcionales anexos).
+├── application/service/          # Testean la lógica de UseCases y mapeo
+│   ├── BehaviorReportServiceTest.java
+│   ├── WellnessResourceServiceTest.java
+│   └── WellnessSurveyServiceTest.java
+├── config/                       # Test de configuraciones y filtros
+│   ├── JwtAuthFilterTest.java
+│   └── SecurityConfigTest.java
+├── domain/model/                 # Unit Tests de objetos inmutables y enums
+│   └── WellnessResourceTest.java (y más...)
+├── entrypoints/rest/             # Test MVC (WebMvcTest + MockMvc)
+│   ├── BehaviorReportControllerTest.java
+│   └── WellnessSurveyControllerTest.java
+└── infrastructure/adapters/      # Test a la capa de persistencia 
 ```
 
-### Cómo ejecutar las pruebas
+### Comandos de Ejecución
 
 ```bash
-# Pruebas unitarias
+# Ejecución general de pruebas
 ./mvnw test
 
-# Todas las pruebas + reporte JaCoCo
-./mvnw verify
-
-# Reporte de cobertura
+# Pruebas + Generar reporte de JaCoCo
 ./mvnw clean test jacoco:report
 ```
 
@@ -204,7 +257,11 @@ src/test/java/edu/eci/patricia/
 
 ## 12. Evidencia de Cobertura
 
-> 📷 **[Insert Image: jacoco.png]**
+Se espera y exige una cobertura general `>= 80%` a través de JaCoCo. La carpeta `infrastructure/config` y las clases `Dto` se han excluido estratégicamente del análisis al carecer de lógica propia.
+
+<div align="center">
+<img src="docs/jacoco.png" alt="Jacoco Coverage Report" width="600"/>
+</div>
 
 ---
 
@@ -214,81 +271,96 @@ src/test/java/edu/eci/patricia/
 
 - Java 21
 - Maven 3.9+
-- Docker & Docker Compose
+- Docker & Docker Compose (Recomendado para BD)
 
-### Opción 1: Local con Maven
+### Opción 1: Desarrollo Local (Maven con H2 o BD Externa)
 
 ```bash
-# Levantar en modo desarrollo (requiere definir credenciales de BD y JWT)
+# Instalar dependencias y correr en el puerto 8080
 ./mvnw spring-boot:run
 ```
 
-**URL:** `http://localhost:8080`
-**Swagger UI:** `http://localhost:8080/swagger-ui.html`
+Si desea conectar localmente a un PostgreSQL configurado, deberá proveer las variables de entorno especificadas más abajo.
 
-### Opción 2: Docker Compose
+### Opción 2: Docker Compose (PostgreSQL Inyectado)
+
+El repositorio cuenta con la receta para levantar inmediatamente la aplicación junto a su BD.
 
 ```bash
+# Levantar servicios
 docker compose up --build
+
+# Bajar servicios
+docker compose down -v
 ```
 
-### Variables de Entorno
+### Variables de Entorno Claves
 
 | Variable | Descripción |
 |---|---|
-| `SPRING_DATASOURCE_URL` | URL de PostgreSQL |
-| `SPRING_DATASOURCE_USERNAME` | Usuario BD |
-| `SPRING_DATASOURCE_PASSWORD` | Contraseña BD |
-| `PORT` | Puerto del servidor (def. 8080) |
-| `JWT_SECRET` | Secreto para validación del token |
+| `SPRING_DATASOURCE_URL` | URL de la BD (ej. `jdbc:postgresql://localhost:5432/m09_suport`) |
+| `SPRING_DATASOURCE_USERNAME` | Usuario de PostgreSQL |
+| `SPRING_DATASOURCE_PASSWORD` | Contraseña de PostgreSQL |
+| `JWT_SECRET` | Secreto HS256 para validación del token de Spring Security |
+| `PORT` | Puerto de exposición de la API (Defecto: `8080`) |
 
 ---
 
 ## 14. Evidencia CI/CD
 
-> 📷 **[Insert Image: ci.png]**
+El módulo posee integración con GitHub Actions para asegurar la calidad antes de aceptar cualquier pull request sobre `develop` o `main`.
 
-> 📷 **[Insert Image: cd.png]**
+<div align="center">
+<img src="docs/ci.png" alt="CI Pipeline" width="600"/>
+<img src="docs/cd.png" alt="CD Pipeline" width="600"/>
+</div>
 
-El proyecto cuenta con GitHub Actions (configuración de CI/CD para compilar y dockerizar la aplicación).
+El flujo realiza:
+1. **Compilación** vía Maven.
+2. **Pruebas Unitarias** para evitar regresiones de lógica.
+3. Validación de **Cobertura** con JaCoCo.
+4. (Opcional en CD) **Docker Build & Push** a repositorio de artefactos.
 
 ---
 
 ## 15. Link Swagger
 
-| Ambiente | URL |
+Una vez ejecutada la aplicación, la documentación interactiva provista por **SpringDoc OpenAPI** es accesible en:
+
+| Entorno | URL |
 |---|---|
-| Local (Maven) | http://localhost:8080/swagger-ui.html |
-| OpenAPI JSON | http://localhost:8080/v3/api-docs |
+| Interfaz Gráfica UI | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) |
+| Definición JSON | [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs) |
+
+*(Nota: Requiere autorizar el Bearer Token arriba a la derecha en Swagger para ejecutar llamados hacia los endpoints protegidos).*
 
 ---
 
 ## 16. Estructura del Código
 
-```
+Respetando `Ports & Adapters`:
+
+```text
 src/main/java/edu/eci/patricia/
-├── application/
-│   ├── dto/                   # Requests/Responses (ej. WellnessResourceResponse)
-│   ├── mapper/                # Mapeo DTO -> Dominio (ej. WellnessResourceMapper)
-│   └── usecase/               # Lógica orquestadora (ej. CreateWellnessResourceUseCase)
-├── domain/
-│   ├── exceptions/            # Excepciones (ej. InvalidCategoryException)
-│   ├── model/                 # Entidad (WellnessResource)
-│   ├── ports/                 # Interfaces (In/Out)
-│   └── valueobjects/          # Objetos de valor (MailtoAppointment)
-├── entrypoints/
-│   ├── advice/                # Controlador de errores (GlobalExceptionHandler)
-│   └── rest/controller/       # WellnessController
-└── infrastructure/
-    ├── adapters/              # Conexión JPA / Repositorios
-    └── config/                # Configuraciones OpenAPI y Spring Security JWT
+├── application/                     # Lógica Orquestadora
+│   ├── dto/                         # Request / Response inmutables
+│   └── service/                     # Implementación Use Cases
+├── config/                          # JWT, OpenAPI, Flyway
+├── domain/                          # Entidades Core sin dependencias externas
+│   ├── exception/
+│   ├── model/
+│   └── ports/                       # Interfaces in/out
+├── entrypoints/                     # Capa Externa In (Web)
+│   ├── rest/                        # Controladores HTTP y Advice
+└── infrastructure/                  # Capa Externa Out (Persistencia)
+    └── adapters/persistence/        # JPA Entities, Repositories, Mappers
 ```
 
 ---
 
 ## 17. Código Documentado
 
-El código contiene validaciones documentadas (p.e. aserciones en los `ValueObjects` e instanciaciones de dominio restrictivas como `createMentalHealth()`).
+El código base incluye **JavaDocs** en las interfaces de dominio (`UseCase` y `Port`), y anotaciones en Swagger `@Operation` y `@ApiResponse` dentro de los `*Controller` para dejar en claro el propósito de los métodos sin necesidad de inspeccionar el código interno.
 
 ---
 
@@ -296,28 +368,23 @@ El código contiene validaciones documentadas (p.e. aserciones en los `ValueObje
 
 | Módulo | Tipo | Dirección | Detalle |
 |---|---|---|---|
-| **M01 — Autenticación** | JWT (validación local) | M01 → M09 | Valida el JWT configurado mediante `SecurityConfig`. |
+| **M01 — Autenticación** | JWT (Offline) | M01 → M09 | M09 lee el token generado por M01 utilizando la llave compartida `JWT_SECRET` en el `JwtAuthFilter`. No hay peticiones HTTP constantes entre módulos. |
 
 ---
 
 ## 19. Pipeline de Desarrollo
 
-```bash
-# Levantar en modo desarrollo
-./mvnw spring-boot:run
-```
-
-El proyecto posee perfiles como `application-local.properties` y `application-qa.properties`.
+1. Se parte de la rama `develop`.
+2. Se crean ramas con el prefijo `feature/nombre` (o `feat/nombre`).
+3. Se realizan commits atómicos bajo convención (ej. `feat: add behavior reports`).
+4. La ejecución de `./mvnw test` debe ser verde localmente.
+5. Se lanza Pull Request hacia `develop`, el pipeline de CI verifica que las pruebas y la cobertura estén en regla.
 
 ---
 
 ## 20. Pipeline de Producción
 
-Para el despliegue de los servicios dockerizados se puede usar Docker Compose:
-
-```bash
-docker compose up --build
-```
+Los despliegues (vía Docker) toman la imagen producida en el pipeline de CD y la despliegan en el servicio Cloud (ej. AWS ECS, Azure, o clúster Docker Swarm). El uso de propiedades centralizadas facilita el pasaje a producción mediante `SPRING_PROFILES_ACTIVE=prod`.
 
 ---
 
@@ -325,10 +392,26 @@ docker compose up --build
 
 ### Dockerfile
 
-La aplicación utiliza un Dockerfile preparado para la contenerización del servicio a través del JAR de Spring Boot (empaquetado por Maven).
+Basado en multistage-build para aligerar la imagen resultante:
+
+```dockerfile
+# Se ejecuta la compilación en Maven
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+...
+# Se copia únicamente el JAR final hacia el Runtime
+FROM eclipse-temurin:21-jre-alpine
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+```
 
 ---
 
 ## 22. Versionamiento
 
-Proyecto empleando Git Flow. El feature principal se desarrolló bajo `feat/wellness`.
+Uso estricto de **Git Flow**:
+
+- `main`: Refleja el estado en producción. Únicamente modificado vía pull requests verificados desde `develop` o `hotfix`.
+- `develop`: Rama base de desarrollo colectivo.
+- `feat/*`: Para nuevas funcionalidades (como `feat/wellness`, rama base de la versión actual).
+- Tags semánticos (`v1.0.0`, etc.) marcan los releases estables sobre `main`.
